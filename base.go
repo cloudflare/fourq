@@ -22,6 +22,8 @@ func bSplit(in uint64) (uint64, uint64) { return in & bMask, in >> 26 }
 func aNeg(in uint64) uint64 { return (^in) & aMask }
 func bNeg(in uint64) uint64 { return (^in) & bMask }
 
+// baseFieldElem is an element of the curve's base field, the integers modulo
+// p=2^127-1. baseFieldElem is always in reduced form.
 type baseFieldElem [5]uint64
 
 func (c *baseFieldElem) String() string {
@@ -173,6 +175,7 @@ func (c *baseFieldElem) Square(a *baseFieldElem) *baseFieldElem {
 	return c
 }
 
+// TODO(brendan): Delete me.
 func (c *baseFieldElem) Exp(a *baseFieldElem, power *big.Int) *baseFieldElem {
 	sum := (&baseFieldElem{}).SetOne()
 	t := &baseFieldElem{}
@@ -190,6 +193,7 @@ func (c *baseFieldElem) Exp(a *baseFieldElem, power *big.Int) *baseFieldElem {
 	return c
 }
 
+// TODO(brendan): Make me efficient.
 func (c *baseFieldElem) Invert(a *baseFieldElem) *baseFieldElem {
 	power := big.NewInt(1)
 	power.Lsh(power, 127).Sub(power, big.NewInt(3))

@@ -37,10 +37,30 @@ func numToBFE(in *big.Int) *baseFieldElem {
 	return out
 }
 
-type intFunc func(a, b *big.Int) *big.Int
-type elemFunc func(A, B *baseFieldElem) *baseFieldElem
+type intFunc1 func(a *big.Int) *big.Int
+type elemFunc1 func(A *baseFieldElem) *baseFieldElem
 
-func randomTest(t *testing.T, real intFunc, cand elemFunc) {
+func randomTest1(t *testing.T, real intFunc1, cand elemFunc1) {
+	for i := 0; i < 10000; i++ {
+		a, _ := rand.Int(rand.Reader, p)
+		c := real(a)
+		c.Mod(c, p)
+
+		A := numToBFE(a)
+		C := cand(A)
+
+		if fmt.Sprint(numToBFE(c)) != fmt.Sprint(C) {
+			t.Log(a)
+			t.Log(C)
+			t.Fatal("Incorrect output.")
+		}
+	}
+}
+
+type intFunc2 func(a, b *big.Int) *big.Int
+type elemFunc2 func(A, B *baseFieldElem) *baseFieldElem
+
+func randomTest2(t *testing.T, real intFunc2, cand elemFunc2) {
 	for i := 0; i < 10000; i++ {
 		a, _ := rand.Int(rand.Reader, p)
 		b, _ := rand.Int(rand.Reader, p)
@@ -53,110 +73,73 @@ func randomTest(t *testing.T, real intFunc, cand elemFunc) {
 		if fmt.Sprint(numToBFE(c)) != fmt.Sprint(C) {
 			t.Log(a, b)
 			t.Log(c, C)
-			t.Fatalf("Incorrect output.")
+			t.Fatal("Incorrect output.")
 		}
 	}
 }
 
-func TestBaseAdd(t *testing.T) { randomTest(t, new(big.Int).Add, new(baseFieldElem).Add) }
-func TestBaseSub(t *testing.T) { randomTest(t, new(big.Int).Sub, new(baseFieldElem).Sub) }
-func TestBaseMul(t *testing.T) { randomTest(t, new(big.Int).Mul, new(baseFieldElem).Mul) }
+// The following are stochastic tests, to hopefully find broken edge-cases that
+// wouldn't be explicitly tested for.
+
+func TestBaseAdd(t *testing.T) { randomTest2(t, new(big.Int).Add, new(baseFieldElem).Add) }
+func TestBaseSub(t *testing.T) { randomTest2(t, new(big.Int).Sub, new(baseFieldElem).Sub) }
+func TestBaseMul(t *testing.T) { randomTest2(t, new(big.Int).Mul, new(baseFieldElem).Mul) }
+
+func TestBaseNeg(t *testing.T) { randomTest1(t, new(big.Int).Neg, new(baseFieldElem).Neg) }
 
 func TestBaseSquare(t *testing.T) {
-	for i := 0; i < 10000; i++ {
-		a, _ := rand.Int(rand.Reader, p)
-		c := new(big.Int).Mul(a, a)
-		c.Mod(c, p)
-		real := numToBFE(c)
-
-		A, C := numToBFE(a), &baseFieldElem{}
-		C.Square(A)
-
-		if fmt.Sprint(real) != fmt.Sprint(C) {
-			t.Fatalf("Incorrect:\n%v\n%v\n%v", a, real, C)
-		}
-	}
+	square := func(a *big.Int) *big.Int { return new(big.Int).Mul(a, a) }
+	randomTest1(t, square, new(baseFieldElem).Square)
 }
 
+func TestBaseInvert(t *testing.T) {
+	invert := func(a *big.Int) *big.Int { return new(big.Int).ModInverse(a, p) }
+	randomTest1(t, invert, new(baseFieldElem).Invert)
+}
+
+// TestBaseAddFull adds -1 to -1. It should be the worst-case for carries that
+// baseFieldElem.Add sees.
 func TestBaseAddFull(t *testing.T) {
 	a := big.NewInt(1)
 	a.Lsh(a, 127).Sub(a, one).Sub(a, one)
 	c := new(big.Int).Add(a, a)
 	c.Mod(c, p)
-	real := numToBFE(c)
 
 	A, C := numToBFE(a), &baseFieldElem{}
 	C.Add(A, A)
 
-	if fmt.Sprint(real) != fmt.Sprint(C) {
-		t.Fatalf("Incorrect:\n%v\n%v\n%v", a, real, C)
+	if fmt.Sprint(numToBFE(c)) != fmt.Sprint(C) {
+		t.Fatalf("Incorrect output: %v", C)
 	}
 }
 
+// TEstBaseAddNegatives adds a random number to its negative. This checks that
+// carries as well as the final reduction are happening properly.
 func TestBaseAddNegatives(t *testing.T) {
-	a := big.NewInt(1)
-	a.Lsh(a, 127).Sub(a, one).Sub(a, one)
-	c := new(big.Int).Add(a, one)
-	c.Mod(c, p)
-	real := numToBFE(c)
-
-	A, B, C := numToBFE(a), numToBFE(one), &baseFieldElem{}
-	C.Add(A, B)
-
-	if fmt.Sprint(real) != fmt.Sprint(C) {
-		t.Fatalf("Incorrect:\n%v\n%v\n%v", a, real, C)
-	}
-}
-
-func TestBaseSubOne(t *testing.T) {
-	a := big.NewInt(1)
-	b, _ := rand.Int(rand.Reader, p)
-	c := new(big.Int).Sub(a, b)
-	c.Mod(c, p)
-	real := numToBFE(c)
+	a, _ := rand.Int(rand.Reader, p)
+	b := new(big.Int).Neg(a)
+	b.Mod(b, p)
+	c := big.NewInt(0)
 
 	A, B, C := numToBFE(a), numToBFE(b), &baseFieldElem{}
-	C.Sub(A, B)
-
-	if fmt.Sprint(real) != fmt.Sprint(C) {
-		t.Fatalf("Incorrect:\n%v\n%v\n%v\n%v", a, b, real, C)
-	}
-}
-
-func TestBaseNeg(t *testing.T) {
-	a, _ := rand.Int(rand.Reader, p)
-
-	A, B, C := numToBFE(a), &baseFieldElem{}, &baseFieldElem{}
-	B.Neg(A)
 	C.Add(A, B)
 
-	if "0 0 0 0 0" != fmt.Sprint(C) {
-		t.Fatalf("Incorrect:\n%v\n%v", a, C)
+	if fmt.Sprint(numToBFE(c)) != fmt.Sprint(C) {
+		t.Log(a, b)
+		t.Log(C)
+		t.Fatal("Incorrect output.")
 	}
 }
 
+// TestMulZero multiplies zero by one and checks that zero is the result.
 func TestBaseMulZero(t *testing.T) {
 	a, b := big.NewInt(0), big.NewInt(1)
-	real := numToBFE(a)
 
 	A, B, C := numToBFE(a), numToBFE(b), &baseFieldElem{}
 	C.Mul(A, B)
 
-	if fmt.Sprint(real) != fmt.Sprint(C) {
-		t.Fatalf("Incorrect:\n%v\n%v", real, C)
-	}
-}
-
-func TestBaseMulInverse(t *testing.T) {
-	a, _ := rand.Int(rand.Reader, p)
-	b := new(big.Int).ModInverse(a, p)
-	real := numToBFE(one)
-
-	A, B, C := numToBFE(a), numToBFE(b), &baseFieldElem{}
-	C.Mul(A, B)
-
-	if fmt.Sprint(real) != fmt.Sprint(C) {
-		t.Fatalf("Incorrect:\n%v\n%v", real, C)
+	if fmt.Sprint(numToBFE(a)) != fmt.Sprint(C) {
+		t.Fatalf("Incorrect output: %v", C)
 	}
 }
 
