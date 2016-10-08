@@ -17,7 +17,7 @@ var (
 			x: &baseFieldElem{0x3cbb287, 0x128918a, 0x30b5724, 0xdd0903, 0x38ffba},
 			y: &baseFieldElem{0x4c8b5c, 0x1f0d121, 0x484934, 0x1c31870, 0x1b8712b},
 		},
-		z: newGFp2(nil).SetOne(),
+		z: newGFp2().SetOne(),
 	}
 
 	d = &gfP2{
@@ -27,6 +27,6 @@ var (
 )
 
 func init() {
-	g.t = newGFp2(nil).Mul(g.x, g.y, nil)
-	Gx, Gy = g.Int(nil)
+	g.t = newGFp2().Mul(g.x, g.y)
+	Gx, Gy = g.Int()
 }

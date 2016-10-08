@@ -143,6 +143,15 @@ func TestBaseMulZero(t *testing.T) {
 	}
 }
 
+func BenchmarkBaseAdd(b *testing.B) {
+	A, B, C := &baseFieldElem{}, &baseFieldElem{}, &baseFieldElem{}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		C.Add(A, B)
+	}
+}
+
 func BenchmarkBaseMul(b *testing.B) {
 	A, B, C := &baseFieldElem{}, &baseFieldElem{}, &baseFieldElem{}
 

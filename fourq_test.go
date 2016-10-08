@@ -8,7 +8,7 @@ import (
 )
 
 func TestIsOnCurve(t *testing.T) {
-	x, y := g.Int(nil)
+	x, y := g.Int()
 	if !IsOnCurve(x, y) {
 		t.Fatal("Generator is not on curve.")
 	}
@@ -28,7 +28,7 @@ func TestIsOnCurve(t *testing.T) {
 }
 
 func TestScalarMultOrder(t *testing.T) {
-	x, y := g.Int(nil)
+	x, y := g.Int()
 	x3, y3 := ScalarMult(x, y, unpack(Order))
 
 	y3real := "100000000000000000000000000000000000000000000000000000000000000"
@@ -57,12 +57,11 @@ func TestScalarMult(t *testing.T) {
 
 		sum := newPoint()
 		tmp := newPoint()
-		pool := new(elemPool)
 
 		for i := k.BitLen() - 1; i >= 0; i-- {
-			tmp.Dbl(sum, pool)
+			tmp.Dbl(sum)
 			if k.Bit(i) != 0 {
-				sum.Add(tmp, pt, pool)
+				sum.Add(tmp, pt)
 			} else {
 				sum.Set(tmp)
 			}
@@ -71,7 +70,7 @@ func TestScalarMult(t *testing.T) {
 		pt = sum
 	}
 
-	x, y := pt.Int(nil)
+	x, y := pt.Int()
 	realX := "ef4b49bd77b4d2df1b4ac9bf2b127c2559c4377254939576011fb1b50cf89b46"
 	realY := "44336f9967501c286c930e7c81b3010945125f9129c4e84f10e2acac8e940b57"
 
@@ -87,5 +86,23 @@ func BenchmarkScalarBaseMult(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ScalarBaseMult(k)
+	}
+}
+
+func BenchmarkPointAdd(b *testing.B) {
+	pt1, pt2 := g, newPoint()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pt2.Add(pt1, pt2)
+	}
+}
+
+func BenchmarkPointDbl(b *testing.B) {
+	pt := g
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pt.Dbl(pt)
 	}
 }

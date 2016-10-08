@@ -26,6 +26,10 @@ func bNeg(in uint64) uint64 { return (^in) & bMask }
 // p=2^127-1. baseFieldElem is always in reduced form.
 type baseFieldElem [5]uint64
 
+func newBaseFieldElem() *baseFieldElem {
+	return &baseFieldElem{}
+}
+
 func (c *baseFieldElem) String() string {
 	return fmt.Sprintf("%x %x %x %x %x", c[0], c[1], c[2], c[3], c[4])
 }
@@ -106,70 +110,94 @@ func (c *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
 }
 
 func (c *baseFieldElem) Dbl(a *baseFieldElem) *baseFieldElem {
-	return c.Add(a, a)
+	return bfeAdd(c, a, a)
 }
 
-func (c *baseFieldElem) Add(a, b *baseFieldElem) *baseFieldElem {
-	c[0] = a[0] + b[0]
-	c[1] = a[1] + b[1]
-	c[2] = a[2] + b[2]
-	c[3] = a[3] + b[3]
-	c[4] = a[4] + b[4]
+func bfeAdd(c, a, b *baseFieldElem) {
+	var carry uint64
+
+	c[0], carry = bSplit(a[0] + b[0])
+	c[1], carry = aSplit(a[1] + b[1] + carry)
+	c[2], carry = bSplit(a[2] + b[2] + carry)
+	c[3], carry = aSplit(a[3] + b[3] + carry)
+	c[4], carry = aSplit(a[4] + b[4] + carry)
+	c[0] += carry
 
 	c.carry()
 	c.reduce()
-	return c
+	// return c
 }
 
 func (c *baseFieldElem) Sub(a, b *baseFieldElem) *baseFieldElem {
-	c[0] = a[0] + bNeg(b[0])
-	c[1] = a[1] + aNeg(b[1])
-	c[2] = a[2] + bNeg(b[2])
-	c[3] = a[3] + aNeg(b[3])
-	c[4] = a[4] + aNeg(b[4])
+	var carry uint64
 
-	c.carry()
+	c[0], carry = bSplit(a[0] + bNeg(b[0]))
+	c[1], carry = aSplit(a[1] + aNeg(b[1]) + carry)
+	c[2], carry = bSplit(a[2] + bNeg(b[2]) + carry)
+	c[3], carry = aSplit(a[3] + aNeg(b[3]) + carry)
+	c[4], carry = aSplit(a[4] + aNeg(b[4]) + carry)
+	c[0] += carry
+
 	c.reduce()
 	return c
 }
 
 func (c *baseFieldElem) Mul(a, b *baseFieldElem) *baseFieldElem {
 	var (
-		l0, u0 = bSplit(a[0]*b[0] + 2*(a[4]*b[1]+a[3]*b[2]+a[2]*b[3]+a[1]*b[4]))
-		l1, u1 = aSplit(a[1]*b[0] + a[0]*b[1] + a[4]*b[2] + a[2]*b[4] + 2*(a[3]*b[3]))
-		l2, u2 = bSplit(a[2]*b[0] + a[0]*b[2] + 2*(a[4]*b[3]+a[3]*b[4]+a[1]*b[1]))
-		l3, u3 = aSplit(a[3]*b[0] + a[2]*b[1] + a[1]*b[2] + a[0]*b[3] + a[4]*b[4])
-		l4, u4 = aSplit(a[4]*b[0] + a[2]*b[2] + a[0]*b[4] + 2*(a[3]*b[1]+a[1]*b[3]))
+		l0, m0, u0 = baSplit(a[0]*b[0] + 2*(a[4]*b[1]  +  a[3]*b[2]  +  a[2]*b[3]  +  a[1]*b[4]))
+		l1, m1, u1 = abSplit(a[1]*b[0] + a[0]*b[1] + a[4]*b[2] + a[2]*b[4] + 2*(a[3]*b[3]))
+		l2, m2, u2 = baSplit(a[2]*b[0] + a[0]*b[2] + 2*(a[4]*b[3]+a[3]*b[4]+a[1]*b[1]))
+		l3, m3, u3 = aaSplit(a[3]*b[0] + a[2]*b[1] + a[1]*b[2] + a[0]*b[3] + a[4]*b[4])
+		l4, m4, u4 = abSplit(a[4]*b[0] + a[2]*b[2] + a[0]*b[4] + 2*(a[3]*b[1]+a[1]*b[3]))
 	)
 
-	c[0] = l0 + u4
-	c[1] = l1 + u0
-	c[2] = l2 + u1
-	c[3] = l3 + u2
-	c[4] = l4 + u3
+	var carry uint64
 
-	c.carry()
+	c[0], carry = bSplit(l0 + m4 + u3)
+	c[1], carry = aSplit(l1 + m0 + u4 + carry)
+	c[2], carry = bSplit(l2 + m1 + u0 + carry)
+	c[3], carry = aSplit(l3 + m2 + u1 + carry)
+	c[4], carry = aSplit(l4 + m3 + u2 + carry)
+	c[0] += carry
+
+	// c.carry()
 	c.carry()
 	c.reduce()
 	return c
 }
 
+// TODO(brendan): Move up
+func aaSplit(in uint64) (uint64, uint64, uint64) {
+	return in & aMask, (in >> 25) & aMask, in >> 50
+}
+
+func abSplit(in uint64) (uint64, uint64, uint64) {
+	return in & aMask, (in >> 25) & bMask, in >> 51
+}
+
+func baSplit(in uint64) (uint64, uint64, uint64) {
+	return in & bMask, (in >> 26) & aMask, in >> 51
+}
+
 func (c *baseFieldElem) Square(a *baseFieldElem) *baseFieldElem {
 	var (
-		l0, u0 = bSplit(a[0]*a[0] + 4*(a[2]*a[3]+a[1]*a[4]))
-		l1, u1 = aSplit(2 * (a[0]*a[1] + a[2]*a[4] + a[3]*a[3]))
-		l2, u2 = bSplit(2 * (2*a[3]*a[4] + a[0]*a[2] + a[1]*a[1]))
-		l3, u3 = aSplit(a[4]*a[4] + 2*(a[1]*a[2]+a[0]*a[3]))
-		l4, u4 = aSplit(a[2]*a[2] + 2*(2*a[1]*a[3]+a[0]*a[4]))
+		l0, m0, u0 = baSplit(a[0]*a[0] + 4*(a[2]*a[3]+a[1]*a[4]))
+		l1, m1, u1 = abSplit(2 * (a[0]*a[1] + a[2]*a[4] + a[3]*a[3]))
+		l2, m2, u2 = baSplit(2 * (a[0]*a[2] + a[1]*a[1] + 2*a[3]*a[4]))
+		l3, m3, u3 = aaSplit(a[4]*a[4] + 2*(a[1]*a[2]+a[0]*a[3]))
+		l4, m4, u4 = abSplit(a[2]*a[2] + 2*(a[0]*a[4] + 2*a[1]*a[3]))
 	)
 
-	c[0] = l0 + u4
-	c[1] = l1 + u0
-	c[2] = l2 + u1
-	c[3] = l3 + u2
-	c[4] = l4 + u3
+	var carry uint64
 
-	c.carry()
+	c[0], carry = bSplit(l0 + m4 + u3)
+	c[1], carry = aSplit(l1 + m0 + u4 + carry)
+	c[2], carry = bSplit(l2 + m1 + u0 + carry)
+	c[3], carry = aSplit(l3 + m2 + u1 + carry)
+	c[4], carry = aSplit(l4 + m3 + u2 + carry)
+	c[0] += carry
+
+	// c.carry()
 	c.carry()
 	c.reduce()
 	return c
@@ -221,14 +249,8 @@ func (c *baseFieldElem) carry() {
 // reduce will set c to zero if it is equal to p. This is the only case where c
 // will not naturally be reduced to canonical form by c.carry().
 func (c *baseFieldElem) reduce() {
-	zero := true
-	zero = zero && c[0] == bMask
-	zero = zero && c[1] == aMask
-	zero = zero && c[2] == bMask
-	zero = zero && c[3] == aMask
-	zero = zero && c[4] == aMask
-
-	if zero {
+	hamming := c[0] + c[1] + c[2] + c[3] + c[4]
+	if hamming == 0x0dfffffb {
 		c.SetZero()
 	}
 }
