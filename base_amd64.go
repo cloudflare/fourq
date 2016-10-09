@@ -130,36 +130,27 @@ func (c *baseFieldElem) IsZero() bool {
 func (c *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
 	c[0] = bNeg(a[0])
 	c[1] = aNeg(a[1])
-
-	c.reduce()
 	return c
 }
 
 // bfeDbl sets c to be 2*a.
-func bfeDbl(c, a *baseFieldElem) {
-	bfeAdd(c, a, a)
-}
-
 //go:noescape
+func bfeDbl(c, a *baseFieldElem)
 
 // bfeAdd sets c to be a+b mod p.
+//go:noescape
 func bfeAdd(c, a, b *baseFieldElem)
 
 // bfeSub sets c to be a-b mod p.
-func bfeSub(c, a, b *baseFieldElem) {
-	bN := newBaseFieldElem()
-	bN.Neg(b)
-	bfeAdd(c, a, bN)
-}
-
 //go:noescape
+func bfeSub(c, a, b *baseFieldElem)
 
 // bfeMul sets c to be a*b mod p.
+//go:noescape
 func bfeMul(c, a, b *baseFieldElem)
 
-//go:noescape
-
 // bfeSquare sets c to a^2 mod p.
+//go:noescape
 func bfeSquare(c, a *baseFieldElem)
 
 // TODO(brendan): Delete me.
