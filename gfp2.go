@@ -12,7 +12,7 @@ type gfP2 struct {
 }
 
 func newGFp2() *gfP2 {
-	return &gfP2{&baseFieldElem{}, &baseFieldElem{}}
+	return &gfP2{newBaseFieldElem(), newBaseFieldElem()}
 }
 
 func (e *gfP2) String() string {
@@ -65,8 +65,8 @@ func (e *gfP2) Neg(a *gfP2) *gfP2 {
 }
 
 func (e *gfP2) Dbl(a *gfP2) *gfP2 {
-	e.x.Dbl(a.x)
-	e.y.Dbl(a.y)
+	bfeDbl(e.x, a.x)
+	bfeDbl(e.y, a.y)
 	return e
 }
 
@@ -77,8 +77,8 @@ func (e *gfP2) Add(a, b *gfP2) *gfP2 {
 }
 
 func (e *gfP2) Sub(a, b *gfP2) *gfP2 {
-	e.x.Sub(a.x, b.x)
-	e.y.Sub(a.y, b.y)
+	bfeSub(e.x, a.x, b.x)
+	bfeSub(e.y, a.y, b.y)
 	return e
 }
 
@@ -103,13 +103,15 @@ func (c *gfP2) Exp(a *gfP2, power *big.Int) *gfP2 {
 // See "Multiplication and Squaring in Pairing-Friendly Fields",
 // http://eprint.iacr.org/2006/471.pdf
 func (e *gfP2) Mul(a, b *gfP2) *gfP2 {
-	tx := newBaseFieldElem().Mul(a.x, b.x)
-	t := newBaseFieldElem().Mul(a.y, b.y)
-	tx.Sub(tx, t)
+	tx, t := newBaseFieldElem(), newBaseFieldElem()
+	bfeMul(tx, a.x, b.x)
+	bfeMul(t, a.y, b.y)
+	bfeSub(tx, tx, t)
 
-	ty := newBaseFieldElem().Mul(a.x, b.y)
-	t.Mul(a.y, b.x)
-	ty.Add(ty, t)
+	ty := newBaseFieldElem()
+	bfeMul(ty, a.x, b.y)
+	bfeMul(t, a.y, b.x)
+	bfeAdd(ty, ty, t)
 
 	e.x.Set(tx)
 	e.y.Set(ty)
@@ -119,11 +121,13 @@ func (e *gfP2) Mul(a, b *gfP2) *gfP2 {
 func (e *gfP2) Square(a *gfP2) *gfP2 {
 	// Complex squaring algorithm:
 	// (x+yi)² = (x+y)(x-y) + 2*x*y*i
-	t1 := newBaseFieldElem().Sub(a.x, a.y)
-	t2 := newBaseFieldElem().Add(a.x, a.y)
-	tx := newBaseFieldElem().Mul(t1, t2)
+	t1, t2, tx := newBaseFieldElem(), newBaseFieldElem(), newBaseFieldElem()
+	bfeSub(t1, a.x, a.y)
+	bfeAdd(t2, a.x, a.y)
+	bfeMul(tx, t1, t2)
 
-	t1.Mul(a.x, a.y).Dbl(t1)
+	bfeMul(t1, a.x, a.y)
+	bfeDbl(t1, t1)
 
 	e.x.Set(tx)
 	e.y.Set(t1)
@@ -133,16 +137,16 @@ func (e *gfP2) Square(a *gfP2) *gfP2 {
 func (e *gfP2) Invert(a *gfP2) *gfP2 {
 	// See "Implementing cryptographic pairings", M. Scott, section 3.2.
 	// ftp://136.206.11.249/pub/crypto/pairings.pdf
-	t := newBaseFieldElem().Mul(a.x, a.x)
-	t2 := newBaseFieldElem().Mul(a.y, a.y)
-	t.Add(t, t2)
+	t, t2 := newBaseFieldElem(), newBaseFieldElem()
+	bfeSquare(t, a.x)
+	bfeSquare(t2, a.y)
+	bfeAdd(t, t, t2)
 
 	inv := newBaseFieldElem().Invert(t)
 
 	e.y.Neg(a.y)
-	e.y.Mul(e.y, inv)
-
-	e.x.Mul(a.x, inv)
+	bfeMul(e.y, e.y, inv)
+	bfeMul(e.x, a.x, inv)
 
 	return e
 }

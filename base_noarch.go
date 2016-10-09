@@ -1,5 +1,16 @@
 package fourq
 
+// The approach to modular arithmetic in this file is as follows: We represent a
+// number mod p=2^127-1 by spreading its bits across 5 uint64s, where only the
+// bottom few bits of each uint64 are occupied in a fully reduced element.
+// Specifically, the bottom 26 bits of the first and third uint64, and the
+// bottom 25 bits of every other. This was chosen because it makes element
+// multiplication and squaring easy while avoiding overflow.
+//
+// Functions on a number which can be implemented substantially faster in
+// assembly are addressed as bfeXXX(c, a, b *bfe) while functions which cannot
+// are addressed as methods: (c *bfe).XXX(a, b *bfe) (c *bfe).
+
 import (
 	"fmt"
 	"math/big"
@@ -19,6 +30,18 @@ func getBit(in []byte, k int) uint64 {
 func aSplit(in uint64) (uint64, uint64) { return in & aMask, in >> 25 }
 func bSplit(in uint64) (uint64, uint64) { return in & bMask, in >> 26 }
 
+func aaSplit(in uint64) (uint64, uint64, uint64) {
+	return in & aMask, (in >> 25) & aMask, in >> 50
+}
+
+func abSplit(in uint64) (uint64, uint64, uint64) {
+	return in & aMask, (in >> 25) & bMask, in >> 51
+}
+
+func baSplit(in uint64) (uint64, uint64, uint64) {
+	return in & bMask, (in >> 26) & aMask, in >> 51
+}
+
 func aNeg(in uint64) uint64 { return (^in) & aMask }
 func bNeg(in uint64) uint64 { return (^in) & bMask }
 
@@ -30,10 +53,36 @@ func newBaseFieldElem() *baseFieldElem {
 	return &baseFieldElem{}
 }
 
+// numToBFE takes a big.Int as input and returns its representation as a
+// baseFieldElement. This function is used exclusively in tests.
+func numToBFE(in *big.Int) *baseFieldElem {
+	out := newBaseFieldElem()
+
+	for i := 0; i < 26; i++ {
+		out[0] += uint64(in.Bit(i)) << uint(i)
+	}
+	for i := 0; i < 25; i++ {
+		out[1] += uint64(in.Bit(26+i)) << uint(i)
+	}
+	for i := 0; i < 26; i++ {
+		out[2] += uint64(in.Bit(26+25+i)) << uint(i)
+	}
+	for i := 0; i < 25; i++ {
+		out[3] += uint64(in.Bit(26+25+26+i)) << uint(i)
+	}
+	for i := 0; i < 25; i++ {
+		out[4] += uint64(in.Bit(26+25+26+25+i)) << uint(i)
+	}
+
+	return out
+}
+
 func (c *baseFieldElem) String() string {
 	return fmt.Sprintf("%x %x %x %x %x", c[0], c[1], c[2], c[3], c[4])
 }
 
+// Bytes returns the compressed, little-endian representation of a number.
+// It is compatible with c.SetBytes().
 func (c *baseFieldElem) Bytes() []byte {
 	out := make([]byte, 16)
 
@@ -55,11 +104,14 @@ func (c *baseFieldElem) Bytes() []byte {
 	return out
 }
 
+// Set sets c to be a (with duplication) and returns c.
 func (c *baseFieldElem) Set(a *baseFieldElem) *baseFieldElem {
 	c[0], c[1], c[2], c[3], c[4] = a[0], a[1], a[2], a[3], a[4]
 	return c
 }
 
+// SetBytes uncompresses the little-endian representation of in so that it is
+// suitable for arithmetic operations and sets it to c, returning c.
 func (c *baseFieldElem) SetBytes(in []byte) *baseFieldElem {
 	if len(in) != 16 {
 		return nil
@@ -84,20 +136,24 @@ func (c *baseFieldElem) SetBytes(in []byte) *baseFieldElem {
 	return c
 }
 
+// SetZero sets c to zero and returns c.
 func (c *baseFieldElem) SetZero() *baseFieldElem {
 	c[0], c[1], c[2], c[3], c[4] = 0, 0, 0, 0, 0
 	return c
 }
 
+// SetOne sets c to 1 and returns c.
 func (c *baseFieldElem) SetOne() *baseFieldElem {
 	c[0], c[1], c[2], c[3], c[4] = 1, 0, 0, 0, 0
 	return c
 }
 
+// IsZero returns true if c is zero.
 func (c *baseFieldElem) IsZero() bool {
 	return c[0] == 0 && c[1] == 0 && c[2] == 0 && c[3] == 0 && c[4] == 0
 }
 
+// Neg sets c to be -a mod p, and returns c.
 func (c *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
 	c[0] = bNeg(a[0])
 	c[1] = aNeg(a[1])
@@ -109,11 +165,14 @@ func (c *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
 	return c
 }
 
-func (c *baseFieldElem) Dbl(a *baseFieldElem) *baseFieldElem {
-	return bfeAdd(c, a, a)
+// bfeDbl sets c to be 2*a.
+func bfeDbl(c, a *baseFieldElem) {
+	bfeAdd(c, a, a)
 }
 
+// bfeAdd sets c to be a+b mod p.
 func bfeAdd(c, a, b *baseFieldElem) {
+	// The first carry is manually inlined for performance.
 	var carry uint64
 
 	c[0], carry = bSplit(a[0] + b[0])
@@ -125,10 +184,10 @@ func bfeAdd(c, a, b *baseFieldElem) {
 
 	c.carry()
 	c.reduce()
-	// return c
 }
 
-func (c *baseFieldElem) Sub(a, b *baseFieldElem) *baseFieldElem {
+// bfeSub sets c to be a-b mod p.
+func bfeSub(c, a, b *baseFieldElem) {
 	var carry uint64
 
 	c[0], carry = bSplit(a[0] + bNeg(b[0]))
@@ -139,12 +198,12 @@ func (c *baseFieldElem) Sub(a, b *baseFieldElem) *baseFieldElem {
 	c[0] += carry
 
 	c.reduce()
-	return c
 }
 
-func (c *baseFieldElem) Mul(a, b *baseFieldElem) *baseFieldElem {
+// bfeMul sets c to be a*b mod p.
+func bfeMul(c, a, b *baseFieldElem) {
 	var (
-		l0, m0, u0 = baSplit(a[0]*b[0] + 2*(a[4]*b[1]  +  a[3]*b[2]  +  a[2]*b[3]  +  a[1]*b[4]))
+		l0, m0, u0 = baSplit(a[0]*b[0] + 2*(a[4]*b[1]+a[3]*b[2]+a[2]*b[3]+a[1]*b[4]))
 		l1, m1, u1 = abSplit(a[1]*b[0] + a[0]*b[1] + a[4]*b[2] + a[2]*b[4] + 2*(a[3]*b[3]))
 		l2, m2, u2 = baSplit(a[2]*b[0] + a[0]*b[2] + 2*(a[4]*b[3]+a[3]*b[4]+a[1]*b[1]))
 		l3, m3, u3 = aaSplit(a[3]*b[0] + a[2]*b[1] + a[1]*b[2] + a[0]*b[3] + a[4]*b[4])
@@ -160,32 +219,18 @@ func (c *baseFieldElem) Mul(a, b *baseFieldElem) *baseFieldElem {
 	c[4], carry = aSplit(l4 + m3 + u2 + carry)
 	c[0] += carry
 
-	// c.carry()
 	c.carry()
 	c.reduce()
-	return c
 }
 
-// TODO(brendan): Move up
-func aaSplit(in uint64) (uint64, uint64, uint64) {
-	return in & aMask, (in >> 25) & aMask, in >> 50
-}
-
-func abSplit(in uint64) (uint64, uint64, uint64) {
-	return in & aMask, (in >> 25) & bMask, in >> 51
-}
-
-func baSplit(in uint64) (uint64, uint64, uint64) {
-	return in & bMask, (in >> 26) & aMask, in >> 51
-}
-
-func (c *baseFieldElem) Square(a *baseFieldElem) *baseFieldElem {
+// bfeSquare sets c to a^2 mod p.
+func bfeSquare(c, a *baseFieldElem) {
 	var (
 		l0, m0, u0 = baSplit(a[0]*a[0] + 4*(a[2]*a[3]+a[1]*a[4]))
 		l1, m1, u1 = abSplit(2 * (a[0]*a[1] + a[2]*a[4] + a[3]*a[3]))
 		l2, m2, u2 = baSplit(2 * (a[0]*a[2] + a[1]*a[1] + 2*a[3]*a[4]))
 		l3, m3, u3 = aaSplit(a[4]*a[4] + 2*(a[1]*a[2]+a[0]*a[3]))
-		l4, m4, u4 = abSplit(a[2]*a[2] + 2*(a[0]*a[4] + 2*a[1]*a[3]))
+		l4, m4, u4 = abSplit(a[2]*a[2] + 2*(a[0]*a[4]+2*a[1]*a[3]))
 	)
 
 	var carry uint64
@@ -197,27 +242,25 @@ func (c *baseFieldElem) Square(a *baseFieldElem) *baseFieldElem {
 	c[4], carry = aSplit(l4 + m3 + u2 + carry)
 	c[0] += carry
 
-	// c.carry()
 	c.carry()
 	c.reduce()
-	return c
 }
 
 // TODO(brendan): Delete me.
 func (c *baseFieldElem) Exp(a *baseFieldElem, power *big.Int) *baseFieldElem {
-	sum := (&baseFieldElem{}).SetOne()
-	t := &baseFieldElem{}
+	sum := newBaseFieldElem().SetOne()
+	t := newBaseFieldElem()
 
 	for i := power.BitLen() - 1; i >= 0; i-- {
-		t.Square(sum)
+		bfeSquare(t, sum)
 		if power.Bit(i) != 0 {
-			sum.Mul(t, a)
+			bfeMul(sum, t, a)
 		} else {
 			sum.Set(t)
 		}
 	}
-	c.Set(sum)
 
+	c.Set(sum)
 	return c
 }
 

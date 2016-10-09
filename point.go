@@ -101,7 +101,7 @@ func (c *point) Dbl(a *point) *point {
 	// D = negative A
 
 	E := newGFp2().Add(a.x, a.y)
-	E.Square(E, ).Sub(E, A).Sub(E, B)
+	E.Square(E).Sub(E, A).Sub(E, B)
 	G := newGFp2().Sub(B, A)
 	F := newGFp2().Sub(G, C)
 	H := newGFp2().Add(A, B)

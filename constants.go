@@ -24,6 +24,10 @@ var (
 		x: &baseFieldElem{0x142, 0x0, 0x1c8000, 0x0, 0x0},
 		y: &baseFieldElem{0x1fc0c8d, 0x85223c, 0x1f9670, 0x2332bf, 0x1791cbe},
 	}
+
+	// Constants exclusively for tests.
+	p, _ = new(big.Int).SetString("170141183460469231731687303715884105727", 10)
+	one  = big.NewInt(1)
 )
 
 func init() {
