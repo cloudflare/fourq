@@ -1,11 +1,12 @@
+// +build amd64,!noasm
 
-// func bfeSquare(dst, a *baseFieldElem)
-TEXT ·bfeSquare(SB), $0-16 // TODO(brendan): Frame size annotations.
-	MOVQ a+8(FP), SI
+// func bfeSquare(c, a *baseFieldElem)
+TEXT ·bfeSquare(SB),0,$0-16 // TODO(brendan): Frame size annotations.
+	MOVQ a+8(FP), DI
 
 	// TODO(brendan): Should I save the contents of these registers and restore them at the end?
-	MOVQ 0(SI), R8
-	MOVQ 8(SI), R9
+	MOVQ 0(DI), R8
+	MOVQ 8(DI), R9
 
 	MOVQ $0, R15 // R15 is going to be used for super-carries.
 
@@ -59,8 +60,8 @@ TEXT ·bfeSquare(SB), $0-16 // TODO(brendan): Frame size annotations.
 	// TODO(brendan): Final reduction.
 
 	// Store output.
-	MOVQ c+0(FP), SI
-	MOVQ AX, 0(SI)
-	MOVQ DX, 8(SI)
+	MOVQ c+0(FP), DI
+	MOVQ AX, 0(DI)
+	MOVQ DX, 8(DI)
 
 	RET

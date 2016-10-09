@@ -1,6 +1,7 @@
+// +build amd64,!noasm
 
-// func bfeMul(dst, a, b *baseFieldElem)
-TEXT ·bfeMul(SB), $0-24
+// func bfeMul(c, a, b *baseFieldElem)
+TEXT ·bfeMul(SB),0,$0-24
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
 
@@ -62,8 +63,8 @@ TEXT ·bfeMul(SB), $0-24
 	// TODO(brendan): Final reduction.
 
 	// Store output.
-	MOVQ c+0(FP), SI
-	MOVQ AX, 0(SI)
-	MOVQ DX, 8(SI)
+	MOVQ c+0(FP), DI
+	MOVQ AX, 0(DI)
+	MOVQ DX, 8(DI)
 
 	RET

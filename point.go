@@ -59,9 +59,8 @@ func (c *point) IsOnCurve() bool {
 	rhs := newGFp2().Square(c.t)
 	rhs.Mul(rhs, d).Add(rhs, z4)
 
-	ok := lhs.Sub(lhs, rhs).IsZero()
-
-	return ok
+	lhs.Sub(lhs, rhs).reduce()
+	return lhs.IsZero()
 }
 
 func (c *point) Add(a, b *point) *point {
@@ -123,4 +122,8 @@ func (c *point) MakeAffine() {
 	c.t.Mul(c.t, zInv)
 	c.t.Mul(c.x, c.y)
 	c.z.SetOne()
+
+	c.x.reduce()
+	c.y.reduce()
+	c.t.reduce()
 }

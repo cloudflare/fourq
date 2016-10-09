@@ -74,8 +74,9 @@ func TestBaseSquare(t *testing.T) {
 // TestBaseAddFull adds -1 to -1. It should be the worst-case for carries that
 // baseFieldElem.Add sees.
 func TestBaseAddFull(t *testing.T) {
-	a := big.NewInt(1)
-	a.Lsh(a, 127).Sub(a, one).Sub(a, one)
+	one := big.NewInt(1)
+	a := new(big.Int).Lsh(one, 127)
+	a.Sub(a, one).Sub(a, one)
 	c := new(big.Int).Add(a, a)
 	c.Mod(c, p)
 
@@ -97,6 +98,7 @@ func TestBaseAddNegatives(t *testing.T) {
 
 	A, B, C := numToBFE(a), numToBFE(b), newBaseFieldElem()
 	bfeAdd(C, A, B)
+	C.reduce()
 
 	if fmt.Sprint(numToBFE(c)) != fmt.Sprint(C) {
 		t.Log(a, b)

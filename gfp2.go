@@ -150,3 +150,8 @@ func (e *gfP2) Invert(a *gfP2) *gfP2 {
 
 	return e
 }
+
+func (e *gfP2) reduce() {
+	e.x.reduce()
+	e.y.reduce()
+}
