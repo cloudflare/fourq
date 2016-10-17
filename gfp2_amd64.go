@@ -1,3 +1,5 @@
+// +build amd64,!noasm
+
 package fourq
 
 import (
@@ -8,11 +10,11 @@ import (
 // gfP2 implements a field of size p² as a quadratic extension of the base
 // field where i²=-1.
 type gfP2 struct {
-	x, y *baseFieldElem // value is x+yi.
+	x, y baseFieldElem // value is x+yi.
 }
 
 func newGFp2() *gfP2 {
-	return &gfP2{newBaseFieldElem(), newBaseFieldElem()}
+	return &gfP2{*newBaseFieldElem(), *newBaseFieldElem()}
 }
 
 func (e *gfP2) String() string {
@@ -27,8 +29,8 @@ func (e *gfP2) Bytes() []byte {
 }
 
 func (e *gfP2) Set(a *gfP2) *gfP2 {
-	e.x.Set(a.x)
-	e.y.Set(a.y)
+	e.x.Set(&a.x)
+	e.y.Set(&a.y)
 	return e
 }
 
@@ -59,26 +61,26 @@ func (e *gfP2) IsZero() bool {
 }
 
 func (e *gfP2) Neg(a *gfP2) *gfP2 {
-	e.x.Neg(a.x)
-	e.y.Neg(a.y)
+	e.x.Neg(&a.x)
+	e.y.Neg(&a.y)
 	return e
 }
 
 func (e *gfP2) Dbl(a *gfP2) *gfP2 {
-	bfeDbl(e.x, a.x)
-	bfeDbl(e.y, a.y)
+	bfeDbl(&e.x, &a.x)
+	bfeDbl(&e.y, &a.y)
 	return e
 }
 
 func (e *gfP2) Add(a, b *gfP2) *gfP2 {
-	bfeAdd(e.x, a.x, b.x)
-	bfeAdd(e.y, a.y, b.y)
+	bfeAdd(&e.x, &a.x, &b.x)
+	bfeAdd(&e.y, &a.y, &b.y)
 	return e
 }
 
 func (e *gfP2) Sub(a, b *gfP2) *gfP2 {
-	bfeSub(e.x, a.x, b.x)
-	bfeSub(e.y, a.y, b.y)
+	bfeSub(&e.x, &a.x, &b.x)
+	bfeSub(&e.y, &a.y, &b.y)
 	return e
 }
 
@@ -88,9 +90,9 @@ func (c *gfP2) Exp(a *gfP2, power *big.Int) *gfP2 {
 	t := newGFp2()
 
 	for i := power.BitLen() - 1; i >= 0; i-- {
-		t.Square(sum)
+		feSquare(t, sum)
 		if power.Bit(i) != 0 {
-			sum.Mul(t, a)
+			feMul(sum, t, a)
 		} else {
 			sum.Set(t)
 		}
@@ -100,53 +102,25 @@ func (c *gfP2) Exp(a *gfP2, power *big.Int) *gfP2 {
 	return c
 }
 
-// See "Multiplication and Squaring in Pairing-Friendly Fields",
-// http://eprint.iacr.org/2006/471.pdf
-func (e *gfP2) Mul(a, b *gfP2) *gfP2 {
-	tx, t := newBaseFieldElem(), newBaseFieldElem()
-	bfeMul(tx, a.x, b.x)
-	bfeMul(t, a.y, b.y)
-	bfeSub(tx, tx, t)
+//go:noescape
+func feMul(c, a, b *gfP2)
 
-	ty := newBaseFieldElem()
-	bfeMul(ty, a.x, b.y)
-	bfeMul(t, a.y, b.x)
-	bfeAdd(ty, ty, t)
-
-	e.x.Set(tx)
-	e.y.Set(ty)
-	return e
-}
-
-func (e *gfP2) Square(a *gfP2) *gfP2 {
-	// Complex squaring algorithm:
-	// (x+yi)² = (x+y)(x-y) + 2*x*y*i
-	t1, t2, tx := newBaseFieldElem(), newBaseFieldElem(), newBaseFieldElem()
-	bfeSub(t1, a.x, a.y)
-	bfeAdd(t2, a.x, a.y)
-	bfeMul(tx, t1, t2)
-
-	bfeMul(t1, a.x, a.y)
-	bfeDbl(t1, t1)
-
-	e.x.Set(tx)
-	e.y.Set(t1)
-	return e
-}
+//go:noescape
+func feSquare(c, a *gfP2)
 
 func (e *gfP2) Invert(a *gfP2) *gfP2 {
 	// See "Implementing cryptographic pairings", M. Scott, section 3.2.
 	// ftp://136.206.11.249/pub/crypto/pairings.pdf
 	t, t2 := newBaseFieldElem(), newBaseFieldElem()
-	bfeSquare(t, a.x)
-	bfeSquare(t2, a.y)
+	bfeSquare(t, &a.x)
+	bfeSquare(t2, &a.y)
 	bfeAdd(t, t, t2)
 
 	inv := newBaseFieldElem().Invert(t)
 
-	e.y.Neg(a.y)
-	bfeMul(e.y, e.y, inv)
-	bfeMul(e.x, a.x, inv)
+	e.y.Neg(&a.y)
+	bfeMul(&e.y, &e.y, inv)
+	bfeMul(&e.x, &a.x, inv)
 
 	return e
 }

@@ -1,0 +1,128 @@
+// +build amd64,!noasm
+
+// func feSquare(c, a, b *gfP2)
+TEXT ·feSquare(SB),0,$0-16
+	MOVQ a+8(FP), DI
+
+// Compute a.x - a.y = 0(DI)||8(DI) - 16(DI)||24(DI). Store in (R9*2^64+R8).
+	MOVQ 16(DI), R8
+	MOVQ 24(DI), R9
+
+	NOTQ R8
+	NOTQ R9
+	BTRQ $63, R9
+
+	ADDQ 0(DI), R8
+	ADCQ 8(DI), R9
+
+	BTRQ $63, R9
+	ADCQ $0, R8
+	ADCQ $0, R9
+
+// Compute a.x + a.y = 0(DI)||8(DI) + 16(DI)||24(DI). Store in (R11*2^64+R10).
+	MOVQ 16(DI), R10
+	MOVQ 24(DI), R11
+
+	ADDQ 0(DI), R10
+	ADCQ 8(DI), R11
+
+	BTRQ $63, R11
+	ADCQ $0, R10
+	ADCQ $0, R11
+
+// Mult (R9*2^64+R8) * (R11*2^64+R10). Store in (R13*2^64+R12).
+// (Code compressed.)
+	MOVQ $0, R15
+	MOVQ R8, AX
+	MULQ R10
+	MOVQ AX, R12
+	MOVQ DX, BX
+	MOVQ R8, AX
+	MULQ R11
+	MOVQ DX, CX
+	ADDQ AX, BX
+	ADCQ $0, CX
+	ADCQ $0, R15
+	MOVQ R9, AX
+	MULQ R10
+	ADDQ AX, BX
+	ADCQ DX, CX
+	ADCQ $0, R15
+	MOVQ BX, R13
+	MOVQ R9, AX
+	MULQ R11
+	ADDQ CX, AX
+	ADCQ R15, DX
+	SHLQ $1, DX
+	SHLQ $1, AX
+	ADCQ $0, DX
+	MOVQ $0, R15
+	ADDQ AX, R12
+	ADCQ DX, R13
+	ADCQ $0, R15
+	SHLQ $1, R15
+	BTRQ $63, R13
+	ADCQ $0, R15
+	ADDQ R15, R12
+	ADCQ $0, R13
+	BTRQ $63, R13
+	ADCQ $0, R12
+	ADCQ $0, R13
+
+// Mult a.x * a.y = 0(DI)||8(DI) * 16(DI)||24(DI). Leave in (DX*2^64+AX).
+// (Code compressed.)
+	MOVQ $0, R15
+	MOVQ 0(DI), AX
+	MULQ 16(DI)
+	MOVQ AX, R8
+	MOVQ DX, BX
+	MOVQ 0(DI), AX
+	MULQ 24(DI)
+	MOVQ DX, CX
+	ADDQ AX, BX
+	ADCQ $0, CX
+	ADCQ $0, R15
+	MOVQ 8(DI), AX
+	MULQ 16(DI)
+	ADDQ AX, BX
+	ADCQ DX, CX
+	ADCQ $0, R15
+	MOVQ BX, R9
+	MOVQ 8(DI), AX
+	MULQ 24(DI)
+	ADDQ CX, AX
+	ADCQ R15, DX
+	SHLQ $1, DX
+	SHLQ $1, AX
+	ADCQ $0, DX
+	MOVQ $0, R15
+	ADDQ R8, AX
+	ADCQ R9, DX
+	ADCQ $0, R15
+	SHLQ $1, R15
+	BTRQ $63, DX
+	ADCQ $0, R15
+	ADDQ R15, AX
+	ADCQ $0, DX
+	BTRQ $63, DX
+	ADCQ $0, AX
+	ADCQ $0, DX
+
+// Double (DX*2^64+AX) in-place.
+	SHLQ $1, DX
+	SHLQ $1, AX
+	ADCQ $0, DX
+
+	BTRQ $63, DX
+	ADCQ $0, AX
+	ADCQ $0, DX
+
+// Move out and return.
+	MOVQ c+0(FP), DI
+
+	MOVQ R12, 0(DI)
+	MOVQ R13, 8(DI)
+	MOVQ AX, 16(DI)
+	MOVQ DX, 24(DI)
+
+	RET

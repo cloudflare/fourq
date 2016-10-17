@@ -33,7 +33,7 @@ func (c *point) Set(a *point) *point {
 func (c *point) SetBytes(x, y []byte) *point {
 	c.x.SetBytes(x)
 	c.y.SetBytes(y)
-	c.t.Mul(c.x, c.y)
+	feMul(c.t, c.x, c.y)
 	c.z.SetOne()
 	return c
 }
@@ -47,17 +47,21 @@ func (c *point) Int() (x, y *big.Int) {
 }
 
 func (c *point) IsOnCurve() bool {
-	z2 := newGFp2().Square(c.z)
-	z4 := newGFp2().Square(z2)
+	z2, z4 := newGFp2(), newGFp2()
+	feSquare(z2, c.z)
+	feSquare(z4, z2)
 
-	x2 := newGFp2().Square(c.x)
-	y2 := newGFp2().Square(c.y)
+	x2, y2 := newGFp2(), newGFp2()
+	feSquare(x2, c.x)
+	feSquare(y2, c.y)
 
 	lhs := newGFp2().Sub(y2, x2)
-	lhs.Mul(lhs, z2)
+	feMul(lhs, lhs, z2)
 
-	rhs := newGFp2().Square(c.t)
-	rhs.Mul(rhs, d).Add(rhs, z4)
+	rhs := newGFp2()
+	feSquare(rhs, c.t)
+	feMul(rhs, rhs, d)
+	rhs.Add(rhs, z4)
 
 	lhs.Sub(lhs, rhs).reduce()
 	return lhs.IsZero()
@@ -66,16 +70,18 @@ func (c *point) IsOnCurve() bool {
 func (c *point) Add(a, b *point) *point {
 	A := newGFp2().Sub(a.y, a.x)
 	tmp := newGFp2().Add(b.y, b.x)
-	A.Mul(A, tmp)
+	feMul(A, A, tmp)
 
 	B := newGFp2().Add(a.y, a.x)
 	tmp.Sub(b.y, b.x)
-	B.Mul(B, tmp)
+	feMul(B, B, tmp)
 
-	C := newGFp2().Mul(a.z, b.t)
+	C := newGFp2()
+	feMul(C, a.z, b.t)
 	C.Dbl(C)
 
-	D := newGFp2().Mul(a.t, b.z)
+	D := newGFp2()
+	feMul(D, a.t, b.z)
 	D.Dbl(D)
 
 	E := newGFp2().Add(D, C)
@@ -83,33 +89,35 @@ func (c *point) Add(a, b *point) *point {
 	G := newGFp2().Add(B, A)
 	H := newGFp2().Sub(D, C)
 
-	c.x.Mul(E, F)
-	c.y.Mul(G, H)
-	c.t.Mul(E, H)
-	c.z.Mul(F, G)
+	feMul(c.x, E, F)
+	feMul(c.y, G, H)
+	feMul(c.t, E, H)
+	feMul(c.z, F, G)
 
 	return c
 }
 
 func (c *point) Dbl(a *point) *point {
-	A := newGFp2().Square(a.x)
-	B := newGFp2().Square(a.y)
-	C := newGFp2().Square(a.z)
+	A, B, C := newGFp2(), newGFp2(), newGFp2()
+	feSquare(A, a.x)
+	feSquare(B, a.y)
+	feSquare(C, a.z)
 	C.Dbl(C)
 
 	// D = negative A
 
 	E := newGFp2().Add(a.x, a.y)
-	E.Square(E).Sub(E, A).Sub(E, B)
+	feSquare(E, E)
+	E.Sub(E, A).Sub(E, B)
 	G := newGFp2().Sub(B, A)
 	F := newGFp2().Sub(G, C)
 	H := newGFp2().Add(A, B)
 	H.Neg(H)
 
-	c.x.Mul(E, F)
-	c.y.Mul(G, H)
-	c.t.Mul(E, H)
-	c.z.Mul(F, G)
+	feMul(c.x, E, F)
+	feMul(c.y, G, H)
+	feMul(c.t, E, H)
+	feMul(c.z, F, G)
 
 	return c
 }
@@ -117,10 +125,10 @@ func (c *point) Dbl(a *point) *point {
 func (c *point) MakeAffine() {
 	zInv := newGFp2().Invert(c.z)
 
-	c.x.Mul(c.x, zInv)
-	c.y.Mul(c.y, zInv)
-	c.t.Mul(c.t, zInv)
-	c.t.Mul(c.x, c.y)
+	feMul(c.x, c.x, zInv)
+	feMul(c.y, c.y, zInv)
+	feMul(c.t, c.t, zInv)
+	feMul(c.z, c.x, c.y)
 	c.z.SetOne()
 
 	c.x.reduce()

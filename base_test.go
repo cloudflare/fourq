@@ -118,30 +118,3 @@ func TestBaseMulZero(t *testing.T) {
 		t.Fatalf("Incorrect output: %v", C)
 	}
 }
-
-func BenchmarkBaseAdd(b *testing.B) {
-	A, B, C := newBaseFieldElem(), newBaseFieldElem(), newBaseFieldElem()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		bfeAdd(C, A, B)
-	}
-}
-
-func BenchmarkBaseMul(b *testing.B) {
-	A, B, C := newBaseFieldElem(), newBaseFieldElem(), newBaseFieldElem()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		bfeMul(C, A, B)
-	}
-}
-
-func BenchmarkBaseSquare(b *testing.B) {
-	A, C := newBaseFieldElem(), newBaseFieldElem()
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		bfeSquare(C, A)
-	}
-}
