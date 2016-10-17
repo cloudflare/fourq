@@ -1,3 +1,7 @@
+// Package fourq implements FourQ, a high-speed elliptic curve at the 128-bit
+// security level.
+//
+// https://eprint.iacr.org/2015/565.pdf
 package fourq
 
 import (

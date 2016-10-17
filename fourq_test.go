@@ -3,8 +3,11 @@ package fourq
 import (
 	"testing"
 
+	"crypto/elliptic"
 	"crypto/rand"
 	"math/big"
+
+	"golang.org/x/crypto/curve25519"
 )
 
 func TestIsOnCurve(t *testing.T) {
@@ -79,16 +82,6 @@ func TestScalarMult(t *testing.T) {
 	}
 }
 
-func BenchmarkScalarBaseMult(b *testing.B) {
-	k := make([]byte, 32)
-	rand.Read(k)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ScalarBaseMult(k)
-	}
-}
-
 func BenchmarkPointAdd(b *testing.B) {
 	pt1, pt2 := g, newPoint()
 
@@ -104,5 +97,41 @@ func BenchmarkPointDbl(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		pt.Dbl(pt)
+	}
+}
+
+func BenchmarkScalarBaseMult(b *testing.B) {
+	k := make([]byte, 32)
+	rand.Read(k)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ScalarBaseMult(k)
+	}
+}
+
+func BenchmarkP256(b *testing.B) {
+	c := elliptic.P256()
+	params := c.Params()
+
+	k := make([]byte, 32)
+	rand.Read(k)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.ScalarMult(params.Gx, params.Gy, k)
+	}
+}
+
+func BenchmarkCurve25519(b *testing.B) {
+	dst, in := [32]byte{}, [32]byte{}
+	rand.Read(in[:])
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		curve25519.ScalarBaseMult(&dst, &in)
 	}
 }
