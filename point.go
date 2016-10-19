@@ -123,15 +123,16 @@ func (c *point) Dbl(a *point) *point {
 }
 
 func (c *point) MakeAffine() {
-	zInv := newGFp2().Invert(c.z)
+	// zInv := newGFp2().Invert(c.z)
+	c.z.Invert(c.z)
 
-	feMul(c.x, c.x, zInv)
-	feMul(c.y, c.y, zInv)
-	feMul(c.t, c.t, zInv)
-	feMul(c.z, c.x, c.y)
-	c.z.SetOne()
+	feMul(c.x, c.x, c.z)
+	feMul(c.y, c.y, c.z)
+	// feMul(c.t, c.t, zInv)
+	// feMul(c.z, c.x, c.y)
+	// c.z.SetOne()
 
 	c.x.reduce()
 	c.y.reduce()
-	c.t.reduce()
+	// c.t.reduce()
 }
