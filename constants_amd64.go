@@ -14,15 +14,15 @@ var (
 	bMask uint64 = 0xffffffffffffffff
 
 	g = &point{
-		x: &gfP2{
+		x: gfP2{
 			x: baseFieldElem{0x286592ad7b3833aa, 0x1a3472237c2fb305},
 			y: baseFieldElem{0x96869fb360ac77f6, 0x1e1f553f2878aa9c},
 		},
-		y: &gfP2{
+		y: gfP2{
 			x: baseFieldElem{0xb924a2462bcbb287, 0xe3fee9ba120785a},
 			y: baseFieldElem{0x49a7c344844c8b5c, 0x6e1c4af8630e0242},
 		},
-		z: newGFp2().SetOne(),
+		z: *newGFp2().SetOne(),
 	}
 
 	d = &gfP2{
@@ -35,7 +35,6 @@ var (
 )
 
 func init() {
-	g.t = newGFp2()
-	feMul(g.t, g.x, g.y)
+	feMul(&g.t, &g.x, &g.y)
 	Gx, Gy = g.Int()
 }
