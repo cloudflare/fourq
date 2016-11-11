@@ -1,5 +1,3 @@
-// +build amd64,!noasm
-
 // func feSquare(c, a, b *gfP2)
 TEXT ·feSquare(SB),0,$0-16
 	MOVQ a+8(FP), DI

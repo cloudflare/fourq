@@ -34,17 +34,14 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 	// TODO(brendan): Mult by cofactor.
 
 	sum := newPoint()
-	tmp := newPoint()
 
-	for pos := 0; pos < 256; pos++ { // TODO(brendan): Allow exp larger than order?
-		b := k[pos/8] >> uint(7-(pos%8))
-		b &= 1
-
-		tmp.Dbl(sum)
-		if b == 1 {
-			sum.Add(tmp, pt)
-		} else {
-			sum.Set(tmp)
+	for _, byte := range k { // TODO(brendan): Allow exp larger than Order?
+		for bitNum := 0; bitNum < 8; bitNum++ {
+			sum.Dbl(sum)
+			if byte&0x80 == 0x080 {
+				sum.MixedAdd(sum, pt)
+			}
+			byte <<= 1
 		}
 	}
 

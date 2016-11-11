@@ -1,5 +1,3 @@
-// +build amd64,!noasm
-
 // func bfeMul(c, a, b *baseFieldElem)
 TEXT ·bfeMul(SB),0,$0-24
 	MOVQ a+8(FP), DI

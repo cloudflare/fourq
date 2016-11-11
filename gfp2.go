@@ -82,6 +82,12 @@ func (e *gfP2) Sub(a, b *gfP2) *gfP2 {
 	return e
 }
 
+//go:noescape
+func feMul(c, a, b *gfP2)
+
+//go:noescape
+func feSquare(c, a *gfP2)
+
 func (c *gfP2) Exp(a *gfP2, power *big.Int) *gfP2 {
 	sum := newGFp2()
 	sum.SetOne()

@@ -67,7 +67,7 @@ func (c *point) IsOnCurve() bool {
 	return lhs.IsZero()
 }
 
-func (c *point) Add(a, b *point) *point {
+func (c *point) MixedAdd(a, b *point) *point {
 	A := newGFp2().Sub(&a.y, &a.x)
 	tmp := newGFp2().Add(&b.y, &b.x)
 	feMul(A, A, tmp)
@@ -80,9 +80,7 @@ func (c *point) Add(a, b *point) *point {
 	feMul(C, &a.z, &b.t)
 	C.Dbl(C)
 
-	D := newGFp2()
-	feMul(D, &a.t, &b.z)
-	D.Dbl(D)
+	D := newGFp2().Dbl(&a.t)
 
 	E := newGFp2().Add(D, C)
 	F := newGFp2().Sub(B, A)

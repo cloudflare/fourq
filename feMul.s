@@ -1,5 +1,3 @@
-// +build amd64,!noasm
-
 // func feMul(c, a, b *gfP2)
 TEXT ·feMul(SB),0,$0-24
 	MOVQ a+8(FP), DI

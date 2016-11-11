@@ -1,5 +1,3 @@
-// +build amd64,!noasm
-
 // func bfeSquare(c, a *baseFieldElem)
 TEXT ·bfeSquare(SB),0,$0-16 // TODO(brendan): Frame size annotations.
 	MOVQ a+8(FP), DI
