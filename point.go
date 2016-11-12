@@ -67,58 +67,11 @@ func (c *point) IsOnCurve() bool {
 	return lhs.IsZero()
 }
 
-func (c *point) MixedAdd(a, b *point) *point {
-	A := newGFp2().Sub(&a.y, &a.x)
-	tmp := newGFp2().Add(&b.y, &b.x)
-	feMul(A, A, tmp)
+//go:noescape
+func pMixedAdd(a, b *point)
 
-	B := newGFp2().Add(&a.y, &a.x)
-	tmp.Sub(&b.y, &b.x)
-	feMul(B, B, tmp)
-
-	C := newGFp2()
-	feMul(C, &a.z, &b.t)
-	C.Dbl(C)
-
-	D := newGFp2().Dbl(&a.t)
-
-	E := newGFp2().Add(D, C)
-	F := newGFp2().Sub(B, A)
-	G := newGFp2().Add(B, A)
-	H := newGFp2().Sub(D, C)
-
-	feMul(&c.x, E, F)
-	feMul(&c.y, G, H)
-	feMul(&c.t, E, H)
-	feMul(&c.z, F, G)
-
-	return c
-}
-
-func (c *point) Dbl(a *point) *point {
-	A, B, C := newGFp2(), newGFp2(), newGFp2()
-	feSquare(A, &a.x)
-	feSquare(B, &a.y)
-	feSquare(C, &a.z)
-	C.Dbl(C)
-
-	// D = negative A
-
-	E := newGFp2().Add(&a.x, &a.y)
-	feSquare(E, E)
-	E.Sub(E, A).Sub(E, B)
-	G := newGFp2().Sub(B, A)
-	F := newGFp2().Sub(G, C)
-	H := newGFp2().Add(A, B)
-	H.Neg(H)
-
-	feMul(&c.x, E, F)
-	feMul(&c.y, G, H)
-	feMul(&c.t, E, H)
-	feMul(&c.z, F, G)
-
-	return c
-}
+//go:noescape
+func pDbl(a *point)
 
 func (c *point) MakeAffine() {
 	// zInv := newGFp2().Invert(c.z)

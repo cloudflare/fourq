@@ -37,9 +37,9 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 
 	for _, byte := range k { // TODO(brendan): Allow exp larger than Order?
 		for bitNum := 0; bitNum < 8; bitNum++ {
-			sum.Dbl(sum)
+			pDbl(sum)
 			if byte&0x80 == 0x080 {
-				sum.MixedAdd(sum, pt)
+				pMixedAdd(sum, pt)
 			}
 			byte <<= 1
 		}

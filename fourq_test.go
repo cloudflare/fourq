@@ -15,7 +15,7 @@ func TestIsOnCurve(t *testing.T) {
 		t.Fatal("Generator is not on curve.")
 	}
 
-	x2, y2 := ScalarMult(x, y, unpack(Order))
+	x2, y2 := ScalarMult(Gx, Gy, unpack(Order))
 	if !IsOnCurve(x2, y2) {
 		t.Fatal("Identity point is not on curve.")
 	}
@@ -23,7 +23,7 @@ func TestIsOnCurve(t *testing.T) {
 	k := make([]byte, 32)
 	rand.Read(k)
 
-	x3, y3 := ScalarMult(x, y, k)
+	x3, y3 := ScalarMult(Gx, Gy, k)
 	if !IsOnCurve(x3, y3) {
 		t.Fatal("Random multiple of generator is not on curve.")
 	}
