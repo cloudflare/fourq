@@ -1,6 +1,7 @@
 package fourq
 
 import (
+	// "fmt"
 	"testing"
 
 	"crypto/elliptic"
@@ -29,9 +30,8 @@ func TestIsOnCurve(t *testing.T) {
 	}
 }
 
-func TestScalarMultOrder(t *testing.T) {
-	x, y := g.Int()
-	x3, y3 := ScalarMult(x, y, unpack(Order))
+func TestScalarBaseMultOrder(t *testing.T) {
+	x3, y3 := ScalarBaseMult(unpack(Order))
 
 	y3real := "100000000000000000000000000000000000000000000000000000000000000"
 	if x3.Sign() != 0 || y3.Text(16) != y3real {
@@ -76,6 +76,30 @@ func BenchmarkScalarBaseMult(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ScalarBaseMult(k)
+	}
+}
+
+func BenchmarkScalarMult(b *testing.B) {
+	k := make([]byte, 32)
+	rand.Read(k)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ScalarMult(Gx, Gy, k)
+	}
+}
+
+func BenchmarkP256Base(b *testing.B) {
+	c := elliptic.P256()
+
+	k := make([]byte, 32)
+	rand.Read(k)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.ScalarBaseMult(k)
 	}
 }
 

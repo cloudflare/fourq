@@ -35,8 +35,8 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 
 	sum := newPoint()
 
-	for _, byte := range k { // TODO(brendan): Allow exp larger than Order?
-		for bitNum := 0; bitNum < 8; bitNum++ {
+	for _, byte := range k {
+		for bit := 0; bit < 8; bit++ {
 			pDbl(sum)
 			if byte&0x80 == 0x080 {
 				pMixedAdd(sum, pt)
@@ -48,4 +48,20 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 	return sum.Int()
 }
 
-func ScalarBaseMult(k []byte) (x, y *big.Int) { return ScalarMult(Gx, Gy, k) }
+func ScalarBaseMult(k []byte) (x, y *big.Int) {
+	if len(k) == 0 {
+		return nil, nil
+	}
+
+	// TODO(brendan): Mult by cofactor.
+	sum := newPoint().Set(generatorBase[k[0]])
+
+	for _, byte := range k[1:] {
+		for bit := 0; bit < 8; bit++ {
+			pDbl(sum)
+		}
+		pMixedAdd(sum, generatorBase[byte])
+	}
+
+	return sum.Int()
+}
