@@ -2,8 +2,6 @@
 TEXT ·feMul(SB),0,$0-24
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
-
-	// Mult a.y * b.y = 16(DI)||24(DI) * 16(SI)||24(SI). Store in (R9*2^64 + R8).
 	MOVQ $0, CX
 	MOVQ 16(DI), AX
 	MULQ 16(SI)
@@ -29,7 +27,6 @@ TEXT ·feMul(SB),0,$0-24
 	ADDQ AX, R8
 	ADCQ DX, R9
 	ADCQ $0, CX
-
 	SHLQ $1, CX
 	BTRQ $63, R9
 	ADCQ CX, R8
@@ -37,27 +34,21 @@ TEXT ·feMul(SB),0,$0-24
 	BTRQ $63, R9
 	ADCQ $0, R8
 	ADCQ $0, R9
-
-	// Negate (R9*2^64 + R8).
 	NOTQ R8
 	NOTQ R9
 	BTRQ $63, R9
-
-	// Mult a.x * b.x = 0(DI)||8(DI) * 0(SI)||8(SI). Add to (R9*2^64 + R8).
 	MOVQ $0, CX
 	MOVQ 0(DI), AX
 	MULQ 0(SI)
 	ADDQ AX, R8
 	ADCQ DX, R9
 	ADCQ $0, CX
-
 	MOVQ 0(DI), AX
 	MULQ 8(SI)
 	SHLQ $1, DX
 	ADDQ DX, R8
 	ADCQ AX, R9
 	ADCQ $0, CX
-
 	MOVQ 8(DI), AX
 	MULQ 0(SI)
 	SHLQ $1, DX
@@ -72,7 +63,6 @@ TEXT ·feMul(SB),0,$0-24
 	ADDQ AX, R8
 	ADCQ DX, R9
 	ADCQ $0, CX
-
 	SHLQ $1, CX
 	BTRQ $63, R9
 	ADCQ CX, R8
@@ -80,8 +70,6 @@ TEXT ·feMul(SB),0,$0-24
 	BTRQ $63, R9
 	ADCQ $0, R8
 	ADCQ $0, R9
-
-	// Mult a.x * b.y = 0(DI)||8(DI) * 16(SI)||24(SI). Store in (R11*2^64 + R10).
 	MOVQ $0, CX
 	MOVQ 0(DI), AX
 	MULQ 16(SI)
@@ -107,7 +95,6 @@ TEXT ·feMul(SB),0,$0-24
 	ADDQ AX, R10
 	ADCQ DX, R11
 	ADCQ $0, CX
-
 	SHLQ $1, CX
 	BTRQ $63, R11
 	ADCQ CX, R10
@@ -115,8 +102,6 @@ TEXT ·feMul(SB),0,$0-24
 	BTRQ $63, R11
 	ADCQ $0, R10
 	ADCQ $0, R11
-
-	// Mult a.y * b.x = 16(DI)||24(DI) * 0(SI)||8(SI). Add to (R11*2^64 + R10).
 	MOVQ $0, CX
 	MOVQ 16(DI), AX
 	MULQ 0(SI)
@@ -143,7 +128,6 @@ TEXT ·feMul(SB),0,$0-24
 	ADDQ AX, R10
 	ADCQ DX, R11
 	ADCQ $0, CX
-
 	SHLQ $1, CX
 	BTRQ $63, R11
 	ADCQ CX, R10
@@ -151,8 +135,6 @@ TEXT ·feMul(SB),0,$0-24
 	BTRQ $63, R11
 	ADCQ $0, R10
 	ADCQ $0, R11
-
-	// Move out.
 	MOVQ c+0(FP), DI
 	MOVQ R8, 0(DI)
 	MOVQ R9, 8(DI)

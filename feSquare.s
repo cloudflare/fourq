@@ -1,8 +1,6 @@
 // func feSquare(c, a *fieldElem)
 TEXT ·feSquare(SB),0,$0-16
 	MOVQ a+8(FP), DI
-
-	// Compute a.x + a.y = 0(DI)||8(DI) + 16(DI)||24(DI). Store in (R11*2^64+R10).
 	MOVQ 0(DI), R10
 	MOVQ 8(DI), R11
 	ADDQ 16(DI), R10
@@ -10,11 +8,8 @@ TEXT ·feSquare(SB),0,$0-16
 	BTRQ $63, R11
 	ADCQ $0, R10
 	ADCQ $0, R11
-
-	// Compute a.x - a.y = 0(DI)||8(DI) - 16(DI)||24(DI). Store in (R13*2^64+R12).
 	MOVQ 16(DI), R12
 	MOVQ 24(DI), R13
-
 	NOTQ R12
 	NOTQ R13
 	BTRQ $63, R13
@@ -23,8 +18,6 @@ TEXT ·feSquare(SB),0,$0-16
 	BTRQ $63, R13
 	ADCQ $0, R12
 	ADCQ $0, R13
-
-	// Mult (R11*2^64+R10) * (R13*2^64+R12). Store in (R9*2^64+R8).
 	MOVQ $0, CX
 	MOVQ R10, AX
 	MULQ R12
@@ -50,7 +43,6 @@ TEXT ·feSquare(SB),0,$0-16
 	ADDQ AX, R8
 	ADCQ DX, R9
 	ADCQ $0, CX
-
 	SHLQ $1, CX
 	BTRQ $63, R9
 	ADCQ CX, R8
@@ -58,8 +50,6 @@ TEXT ·feSquare(SB),0,$0-16
 	BTRQ $63, R9
 	ADCQ $0, R8
 	ADCQ $0, R9
-
-	// Mult a.x * a.y = 0(DI)||8(DI) * 16(DI)||24(DI). Store in (R11*2^64+R10).
 	MOVQ $0, CX
 	MOVQ 0(DI), AX
 	MULQ 16(DI)
@@ -85,7 +75,6 @@ TEXT ·feSquare(SB),0,$0-16
 	ADDQ AX, R10
 	ADCQ DX, R11
 	ADCQ $0, CX
-
 	SHLQ $1, CX
 	BTRQ $63, R11
 	ADCQ CX, R10
@@ -93,16 +82,12 @@ TEXT ·feSquare(SB),0,$0-16
 	BTRQ $63, R11
 	ADCQ $0, R10
 	ADCQ $0, R11
-
-	// Double (R11*2^64+R10) in-place.
 	SHLQ $1, R11
 	SHLQ $1, R10
 	ADCQ $0, R11
 	BTRQ $63, R11
 	ADCQ $0, R10
 	ADCQ $0, R11
-
-	// Move out.
 	MOVQ c+0(FP), DI
 	MOVQ R8, 0(DI)
 	MOVQ R9, 8(DI)
