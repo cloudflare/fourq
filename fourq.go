@@ -8,34 +8,28 @@ import (
 	"math/big"
 )
 
-func unpack(in *big.Int) []byte {
-	out := make([]byte, 32)
-	inBytes := in.Bytes()
-	if len(inBytes) > 32 {
-		return out
+func IsOnCurve(xI, yI *big.Int) bool {
+	if xI == nil || yI == nil {
+		return false
 	}
 
-	copy(out[32-len(inBytes):], inBytes)
-	return out
-}
-
-func IsOnCurve(xI, yI *big.Int) bool {
 	pt := newPoint()
-	pt.SetBytes(unpack(xI), unpack(yI))
-
+	pt.SetInt(xI, yI)
 	return pt.IsOnCurve()
 }
 
 func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
-	pt := newPoint()
-	pt.SetBytes(unpack(xI), unpack(yI))
+	if xI == nil || yI == nil {
+		return nil, nil
+	}
 
+	pt := &point{}
 	// TODO(brendan): Check if point is on curve?
-	// TODO(brendan): Mult by cofactor.
+	pt.SetInt(xI, yI) // TODO(brendan): Point decompression.
 
 	sum := newPoint()
 
-	for _, byte := range k {
+	for _, byte := range k { // TODO(brendan): Mult by cofactor.
 		for bit := 0; bit < 8; bit++ {
 			pDbl(sum)
 			if byte&0x80 == 0x080 {
@@ -53,10 +47,10 @@ func ScalarBaseMult(k []byte) (x, y *big.Int) {
 		return nil, nil
 	}
 
-	// TODO(brendan): Mult by cofactor.
-	sum := newPoint().Set(generatorBase[k[0]])
+	sum := &point{}
+	sum.Set(generatorBase[k[0]])
 
-	for _, byte := range k[1:] {
+	for _, byte := range k[1:] { // TODO(brendan): Mult by cofactor.
 		for bit := 0; bit < 8; bit++ {
 			pDbl(sum)
 		}

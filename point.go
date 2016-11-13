@@ -10,12 +10,10 @@ type point struct {
 }
 
 func newPoint() *point {
-	return &point{
-		x: *newGFp2().SetZero(),
-		y: *newGFp2().SetOne(),
-		t: *newGFp2().SetZero(),
-		z: *newGFp2().SetOne(),
-	}
+	pt := &point{}
+	pt.y.SetOne()
+	pt.z.SetOne()
+	return pt
 }
 
 func (c *point) String() string {
@@ -30,9 +28,9 @@ func (c *point) Set(a *point) *point {
 	return c
 }
 
-func (c *point) SetBytes(x, y []byte) *point {
-	c.x.SetBytes(x)
-	c.y.SetBytes(y)
+func (c *point) SetInt(x, y *big.Int) *point {
+	c.x.SetInt(x)
+	c.y.SetInt(y)
 	feMul(&c.t, &c.x, &c.y)
 	c.z.SetOne()
 	return c
@@ -40,10 +38,7 @@ func (c *point) SetBytes(x, y []byte) *point {
 
 func (c *point) Int() (x, y *big.Int) {
 	c.MakeAffine()
-
-	x = new(big.Int).SetBytes(c.x.Bytes())
-	y = new(big.Int).SetBytes(c.y.Bytes())
-	return
+	return c.x.Int(), c.y.Int()
 }
 
 func (c *point) IsOnCurve() bool {

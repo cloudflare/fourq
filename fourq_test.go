@@ -15,7 +15,7 @@ func TestIsOnCurve(t *testing.T) {
 		t.Fatal("Generator is not on curve.")
 	}
 
-	x2, y2 := ScalarMult(Gx, Gy, unpack(Order))
+	x2, y2 := ScalarMult(Gx, Gy, Order.Bytes())
 	if !IsOnCurve(x2, y2) {
 		t.Fatal("Identity point is not on curve.")
 	}
@@ -30,7 +30,7 @@ func TestIsOnCurve(t *testing.T) {
 }
 
 func TestScalarBaseMultOrder(t *testing.T) {
-	x3, y3 := ScalarBaseMult(unpack(Order))
+	x3, y3 := ScalarBaseMult(Order.Bytes())
 
 	y3real := "100000000000000000000000000000000000000000000000000000000000000"
 	if x3.Sign() != 0 || y3.Text(16) != y3real {
