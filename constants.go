@@ -38,7 +38,7 @@ var (
 		&point{
 			x: gfP2{baseFieldElem{0x0000000000000000, 0x0000000000000000}, baseFieldElem{0x0000000000000000, 0x0000000000000000}},
 			y: gfP2{baseFieldElem{0x0000000000000001, 0x0000000000000000}, baseFieldElem{0x0000000000000000, 0x0000000000000000}},
-			t: gfP2{baseFieldElem{0xffffffffffffffff, 0x7fffffffffffffff}, baseFieldElem{0x0000000000000000, 0x0000000000000000}},
+			t: gfP2{baseFieldElem{0x0000000000000000, 0x0000000000000000}, baseFieldElem{0x0000000000000000, 0x0000000000000000}},
 			z: gfP2{baseFieldElem{0x1, 0x0}, baseFieldElem{0x0, 0x0}},
 		}, &point{
 			x: gfP2{baseFieldElem{0x286592ad7b3833aa, 0x1a3472237c2fb305}, baseFieldElem{0x96869fb360ac77f6, 0x1e1f553f2878aa9c}},
