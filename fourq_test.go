@@ -1,7 +1,6 @@
 package fourq
 
 import (
-	// "fmt"
 	"testing"
 
 	"crypto/elliptic"

@@ -6,7 +6,6 @@ import (
 
 var (
 	Order, _ = new(big.Int).SetString("73846995687063900142583536357581573884798075859800097461294096333596429543", 10)
-	Gx, Gy   *big.Int
 
 	aMask uint64 = 0x7fffffffffffffff
 	bMask uint64 = 0xffffffffffffffff
@@ -17,11 +16,17 @@ var (
 			y: baseFieldElem{0x96869fb360ac77f6, 0x1e1f553f2878aa9c},
 		},
 		y: gfP2{
-			x: baseFieldElem{0xb924a2462bcbb287, 0xe3fee9ba120785a},
+			x: baseFieldElem{0xb924a2462bcbb287, 0x0e3fee9ba120785a},
 			y: baseFieldElem{0x49a7c344844c8b5c, 0x6e1c4af8630e0242},
+		},
+		t: gfP2{
+			x: baseFieldElem{0x894ba36ee8cee416, 0x35bfa1947fb0913e},
+			y: baseFieldElem{0x673c574d296cd8d0, 0x7bfb41a38e7076ac},
 		},
 		z: *newGFp2().SetOne(),
 	}
+	Gx, _ = new(big.Int).SetString("aa33387bad92652805b32f7c2372341af677ac60b39f86969caa78283f551f1e", 16)
+	Gy, _ = new(big.Int).SetString("87b2cb2b46a224b95a7820a19bee3f0e5c8b4c8444c3a74942020e63f84a1c6e", 16)
 
 	d = &gfP2{
 		x: baseFieldElem{0x142, 0xe4},
@@ -1312,12 +1317,4 @@ var (
 			z: gfP2{baseFieldElem{0x1, 0x0}, baseFieldElem{0x0, 0x0}},
 		},
 	}
-
-	// Constants exclusively for tests.
-	p, _ = new(big.Int).SetString("170141183460469231731687303715884105727", 10)
 )
-
-func init() {
-	feMul(&g.t, &g.x, &g.y)
-	Gx, Gy = g.Int()
-}

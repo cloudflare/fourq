@@ -2,7 +2,6 @@ package fourq
 
 import (
 	"fmt"
-	"math/big"
 )
 
 // gfP2 implements a field of size p² as a quadratic extension of the base
@@ -58,29 +57,11 @@ func (e *gfP2) IsZero() bool {
 	return e.x.IsZero() && e.y.IsZero()
 }
 
-func (e *gfP2) Neg(a *gfP2) *gfP2 {
-	e.x.Neg(&a.x)
-	e.y.Neg(&a.y)
-	return e
-}
+//go:noescape
+func feAdd(c, a, b *gfP2)
 
-func (e *gfP2) Dbl(a *gfP2) *gfP2 {
-	bfeDbl(&e.x, &a.x)
-	bfeDbl(&e.y, &a.y)
-	return e
-}
-
-func (e *gfP2) Add(a, b *gfP2) *gfP2 {
-	bfeAdd(&e.x, &a.x, &b.x)
-	bfeAdd(&e.y, &a.y, &b.y)
-	return e
-}
-
-func (e *gfP2) Sub(a, b *gfP2) *gfP2 {
-	bfeSub(&e.x, &a.x, &b.x)
-	bfeSub(&e.y, &a.y, &b.y)
-	return e
-}
+//go:noescape
+func feSub(c, a, b *gfP2)
 
 //go:noescape
 func feMul(c, a, b *gfP2)
@@ -88,40 +69,8 @@ func feMul(c, a, b *gfP2)
 //go:noescape
 func feSquare(c, a *gfP2)
 
-func (c *gfP2) Exp(a *gfP2, power *big.Int) *gfP2 {
-	sum := newGFp2()
-	sum.SetOne()
-	t := newGFp2()
-
-	for i := power.BitLen() - 1; i >= 0; i-- {
-		feSquare(t, sum)
-		if power.Bit(i) != 0 {
-			feMul(sum, t, a)
-		} else {
-			sum.Set(t)
-		}
-	}
-
-	c.Set(sum)
-	return c
-}
-
-func (e *gfP2) Invert(a *gfP2) *gfP2 {
-	// See "Implementing cryptographic pairings", M. Scott, section 3.2.
-	// ftp://136.206.11.249/pub/crypto/pairings.pdf
-	t, t2 := newBaseFieldElem(), newBaseFieldElem()
-	bfeSquare(t, &a.x)
-	bfeSquare(t2, &a.y)
-	bfeAdd(t, t, t2)
-
-	inv := newBaseFieldElem().Invert(t)
-
-	e.y.Neg(&a.y)
-	bfeMul(&e.y, &e.y, inv)
-	bfeMul(&e.x, &a.x, inv)
-
-	return e
-}
+//go:noescape
+func feInvert(c, a *gfP2)
 
 func (e *gfP2) reduce() {
 	e.x.reduce()

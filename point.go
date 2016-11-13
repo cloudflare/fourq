@@ -55,15 +55,17 @@ func (c *point) IsOnCurve() bool {
 	feSquare(x2, &c.x)
 	feSquare(y2, &c.y)
 
-	lhs := newGFp2().Sub(y2, x2)
+	lhs := newGFp2()
+	feSub(lhs, y2, x2)
 	feMul(lhs, lhs, z2)
 
 	rhs := newGFp2()
 	feSquare(rhs, &c.t)
 	feMul(rhs, rhs, d)
-	rhs.Add(rhs, z4)
+	feAdd(rhs, rhs, z4)
 
-	lhs.Sub(lhs, rhs).reduce()
+	feSub(lhs, lhs, rhs)
+	lhs.reduce()
 	return lhs.IsZero()
 }
 
@@ -75,7 +77,7 @@ func pDbl(a *point)
 
 func (c *point) MakeAffine() {
 	// zInv := newGFp2().Invert(c.z)
-	c.z.Invert(&c.z)
+	feInvert(&c.z, &c.z)
 
 	feMul(&c.x, &c.x, &c.z)
 	feMul(&c.y, &c.y, &c.z)

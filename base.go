@@ -9,9 +9,6 @@ func getBit(in []byte, k int) uint64 {
 	return uint64(in[k/8]>>uint(k%8)) & 1
 }
 
-func aNeg(in uint64) uint64 { return (^in) & aMask }
-func bNeg(in uint64) uint64 { return (^in) & bMask }
-
 // baseFieldElem is an element of the curve's base field, the integers modulo
 // p=2^127-1. baseFieldElem is always in reduced form.
 type baseFieldElem [2]uint64
@@ -95,59 +92,6 @@ func (c *baseFieldElem) SetOne() *baseFieldElem {
 // IsZero returns true if c is zero.
 func (c *baseFieldElem) IsZero() bool {
 	return c[0] == 0 && c[1] == 0
-}
-
-// Neg sets c to be -a mod p, and returns c.
-func (c *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
-	c[0] = bNeg(a[0])
-	c[1] = aNeg(a[1])
-	return c
-}
-
-// bfeDbl sets c to be 2*a.
-//go:noescape
-func bfeDbl(c, a *baseFieldElem)
-
-// bfeAdd sets c to be a+b mod p.
-//go:noescape
-func bfeAdd(c, a, b *baseFieldElem)
-
-// bfeSub sets c to be a-b mod p.
-//go:noescape
-func bfeSub(c, a, b *baseFieldElem)
-
-// bfeMul sets c to be a*b mod p.
-//go:noescape
-func bfeMul(c, a, b *baseFieldElem)
-
-// bfeSquare sets c to a^2 mod p.
-//go:noescape
-func bfeSquare(c, a *baseFieldElem)
-
-// TODO(brendan): Delete me.
-func (c *baseFieldElem) Exp(a *baseFieldElem, power *big.Int) *baseFieldElem {
-	sum := newBaseFieldElem().SetOne()
-	t := newBaseFieldElem()
-
-	for i := power.BitLen() - 1; i >= 0; i-- {
-		bfeSquare(t, sum)
-		if power.Bit(i) != 0 {
-			bfeMul(sum, t, a)
-		} else {
-			sum.Set(t)
-		}
-	}
-
-	c.Set(sum)
-	return c
-}
-
-// TODO(brendan): Make me efficient.
-func (c *baseFieldElem) Invert(a *baseFieldElem) *baseFieldElem {
-	power := big.NewInt(1)
-	power.Lsh(power, 127).Sub(power, big.NewInt(3))
-
-	return c.Exp(a, power)
 }
 
 // reduce will set c to zero if it is equal to p. This is the only case where c
