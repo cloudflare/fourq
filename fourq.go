@@ -8,6 +8,8 @@ import (
 	"math/big"
 )
 
+// IsOnCurve returns true if (xI, yI) is a point on the curve (including the
+// identity point and points in a non-prime order subgroup) and false otherwise.
 func IsOnCurve(xI, yI *big.Int) bool {
 	if xI == nil || yI == nil {
 		return false

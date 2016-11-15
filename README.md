@@ -2,9 +2,14 @@ FourQ
 -----
 
 FourQ is a high-speed elliptic curve at the 128-bit security level. This package
-contains only an AMD64-optimized implementation.
+contains only an AMD64-optimized implementation. It is a preliminary
+implementation, and is incomplete. In particular, this package does not
+implement FourQ's endomorphisms or lattice reduction techniques.
 
-Preliminary benchmarks:
+- Documentation: https://godoc.org/github.com/cloudflare/fourq
+- For questions about the code, open an issue or email me at: brendan@cloudflare.com
+
+Most recent benchmarks:
 ```
 BenchmarkScalarBaseMult-4   	   50000	     36227 ns/op	     128 B/op	       4 allocs/op
 BenchmarkScalarMult-4       	   30000	     50288 ns/op	     128 B/op	       4 allocs/op
