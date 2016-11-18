@@ -15,8 +15,7 @@ func IsOnCurve(xI, yI *big.Int) bool {
 		return false
 	}
 
-	pt := newPoint()
-	pt.SetInt(xI, yI)
+	pt := newPoint().SetInt(xI, yI)
 	return pt.IsOnCurve()
 }
 

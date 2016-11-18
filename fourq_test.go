@@ -22,10 +22,14 @@ func TestIsOnCurve(t *testing.T) {
 
 	k := make([]byte, 32)
 	rand.Read(k)
-
 	x3, y3 := ScalarMult(Gx, Gy, k)
 	if !IsOnCurve(x3, y3) {
 		t.Fatal("Random multiple of generator is not on curve.")
+	}
+
+	x4, y4 := big.NewInt(5), big.NewInt(7)
+	if IsOnCurve(x4, y4) {
+		t.Fatal("Non-existent point is on curve.")
 	}
 }
 

@@ -17,7 +17,7 @@ func newPoint() *point {
 }
 
 func (c *point) String() string {
-	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tt: %v,\n\tz: %v\n)", c.x, c.y, c.t, c.z)
+	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tt: %v,\n\tz: %v\n)", &c.x, &c.y, &c.t, &c.z)
 }
 
 func (c *point) Set(a *point) *point {
@@ -42,6 +42,10 @@ func (c *point) Int() (x, y *big.Int) {
 }
 
 func (c *point) IsOnCurve() bool {
+	if c == nil {
+		return false
+	}
+
 	z2, z4 := newGFp2(), newGFp2()
 	feSquare(z2, &c.z)
 	feSquare(z4, z2)

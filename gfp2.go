@@ -17,6 +17,10 @@ func swapEndian(in uint64) uint64 {
 // p=2^127-1. baseFieldElem is always in reduced form.
 type baseFieldElem [2]uint64
 
+func (e baseFieldElem) String() string {
+	return fmt.Sprintf("%16.16x %16.16x", e[1], e[0])
+}
+
 // gfP2 implements a field of size p² as a quadratic extension of the base
 // field where i²=-1.
 type gfP2 struct {
@@ -47,15 +51,15 @@ func (e *gfP2) Set(a *gfP2) *gfP2 {
 }
 
 func (e *gfP2) SetInt(in *big.Int) *gfP2 {
-	w := in.Bits()
-	if len(w) != 4 {
-		return nil
+	w, temp := [4]uint64{}, in.Bits()
+	for i := 0; i < len(temp) && i < 4; i++ {
+		w[i] = uint64(temp[i])
 	}
 
-	e.y[1] = swapEndian(uint64(w[0]))
-	e.y[0] = swapEndian(uint64(w[1]))
-	e.x[1] = swapEndian(uint64(w[2]))
-	e.x[0] = swapEndian(uint64(w[3]))
+	e.y[1] = swapEndian(w[0])
+	e.y[0] = swapEndian(w[1])
+	e.x[1] = swapEndian(w[2])
+	e.x[0] = swapEndian(w[3])
 
 	return e
 }
