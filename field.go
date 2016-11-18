@@ -13,29 +13,21 @@ func swapEndian(in uint64) uint64 {
 	return out
 }
 
-// baseFieldElem is an element of the curve's base field, the integers modulo
-// p=2^127-1. baseFieldElem is always in reduced form.
-type baseFieldElem [2]uint64
-
-func (e baseFieldElem) String() string {
-	return fmt.Sprintf("%16.16x %16.16x", e[1], e[0])
-}
-
-// gfP2 implements a field of size p² as a quadratic extension of the base
+// fieldElem implements a field of size p² as a quadratic extension of the base
 // field where i²=-1.
-type gfP2 struct {
+type fieldElem struct {
 	x, y baseFieldElem // value is x+yi.
 }
 
-func newGFp2() *gfP2 {
-	return &gfP2{}
+func newFieldElem() *fieldElem {
+	return &fieldElem{}
 }
 
-func (e *gfP2) String() string {
+func (e *fieldElem) String() string {
 	return fmt.Sprintf("[%v, %v]", e.x, e.y)
 }
 
-func (e *gfP2) Int() *big.Int {
+func (e *fieldElem) Int() *big.Int {
 	return new(big.Int).SetBits([]big.Word{
 		big.Word(swapEndian(e.y[1])),
 		big.Word(swapEndian(e.y[0])),
@@ -44,13 +36,13 @@ func (e *gfP2) Int() *big.Int {
 	})
 }
 
-func (e *gfP2) Set(a *gfP2) *gfP2 {
+func (e *fieldElem) Set(a *fieldElem) *fieldElem {
 	e.x[0], e.x[1] = a.x[0], a.x[1]
 	e.y[0], e.y[1] = a.y[0], a.y[1]
 	return e
 }
 
-func (e *gfP2) SetInt(in *big.Int) *gfP2 {
+func (e *fieldElem) SetInt(in *big.Int) *fieldElem {
 	w, temp := [4]uint64{}, in.Bits()
 	for i := 0; i < len(temp) && i < 4; i++ {
 		w[i] = uint64(temp[i])
@@ -64,40 +56,40 @@ func (e *gfP2) SetInt(in *big.Int) *gfP2 {
 	return e
 }
 
-func (e *gfP2) SetZero() *gfP2 {
+func (e *fieldElem) SetZero() *fieldElem {
 	e.x[0], e.x[1] = 0, 0
 	e.y[0], e.y[1] = 0, 0
 	return e
 }
 
-func (e *gfP2) SetOne() *gfP2 {
+func (e *fieldElem) SetOne() *fieldElem {
 	e.x[0], e.x[1] = 1, 0
 	e.y[0], e.y[1] = 0, 0
 	return e
 }
 
-func (e *gfP2) IsZero() bool {
+func (e *fieldElem) IsZero() bool {
 	return e.x[0] == 0 && e.x[1] == 0 && e.y[0] == 0 && e.y[1] == 0
 }
 
 //go:noescape
-func feAdd(c, a, b *gfP2)
+func feAdd(c, a, b *fieldElem)
 
 //go:noescape
-func feSub(c, a, b *gfP2)
+func feSub(c, a, b *fieldElem)
 
 //go:noescape
-func feMul(c, a, b *gfP2)
+func feMul(c, a, b *fieldElem)
 
 //go:noescape
-func feSquare(c, a *gfP2)
+func feSquare(c, a *fieldElem)
 
 //go:noescape
-func feInvert(c, a *gfP2)
+func feInvert(c, a *fieldElem)
 
 // reduce will set e.x or e.y to zero if they're equal to p. This is the only
 // case where they will not naturally be reduced to canonical form.
-func (e *gfP2) reduce() {
+func (e *fieldElem) reduce() {
 	if e.x[0] == bMask && e.x[1] == aMask {
 		e.x[0], e.x[1] = 0, 0
 	}

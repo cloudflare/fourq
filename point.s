@@ -1,4 +1,4 @@
-#include "macros.s"
+#include "field.h"
 
 // func pDbl(a *point)
 TEXT ·pDbl(SB),0,$128-8

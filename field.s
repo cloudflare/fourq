@@ -1,6 +1,6 @@
-#include "macros.s"
+#include "field.h"
 
-// func feAdd(c, a, b *gfP2)
+// func feAdd(c, a, b *fieldElem)
 TEXT ·feAdd(SB),0,$0-24
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
@@ -11,7 +11,7 @@ TEXT ·feAdd(SB),0,$0-24
 	feMov(AX,BX,CX,DX, 0(DI),8(DI),16(DI),24(DI))
 	RET
 
-// func feSub(c, a, b *gfP2)
+// func feSub(c, a, b *fieldElem)
 TEXT ·feSub(SB),0,$0-24
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
@@ -26,30 +26,22 @@ TEXT ·feSub(SB),0,$0-24
 TEXT ·feMul(SB),0,$0-24
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
-
 	feMul(CX, 0(DI),8(DI),16(DI),24(DI), 0(SI),8(SI),16(SI),24(SI), R8,R9,R10,R11)
 
 	MOVQ c+0(FP), DI
-	MOVQ  R8,  0(DI)
-	MOVQ  R9,  8(DI)
-	MOVQ R10, 16(DI)
-	MOVQ R11, 24(DI)
+	feMov(R8,R9,R10,R11, 0(DI),8(DI),16(DI),24(DI))
 	RET
 
 // func feSquare(c, a *fieldElem)
 TEXT ·feSquare(SB),0,$0-16
 	MOVQ a+8(FP), DI
-
 	feSquare(CX,R12,R13, 0(DI),8(DI),16(DI),24(DI), R8,R9,R10,R11)
 
 	MOVQ c+0(FP), DI
-	MOVQ R8, 0(DI)
-	MOVQ R9, 8(DI)
-	MOVQ R10, 16(DI)
-	MOVQ R11, 24(DI)
+	feMov(R8,R9,R10,R11, 0(DI),8(DI),16(DI),24(DI))
 	RET
 
-// func feInvert(c, a *gfP2)
+// func feInvert(c, a *fieldElem)
 TEXT ·feInvert(SB),0,$0-16
 	MOVQ a+8(FP), DI
 

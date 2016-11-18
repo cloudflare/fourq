@@ -6,7 +6,7 @@ import (
 )
 
 type point struct {
-	x, y, t, z gfP2
+	x, y, t, z fieldElem
 }
 
 func newPoint() *point {
@@ -46,19 +46,19 @@ func (c *point) IsOnCurve() bool {
 		return false
 	}
 
-	z2, z4 := newGFp2(), newGFp2()
+	z2, z4 := newFieldElem(), newFieldElem()
 	feSquare(z2, &c.z)
 	feSquare(z4, z2)
 
-	x2, y2 := newGFp2(), newGFp2()
+	x2, y2 := newFieldElem(), newFieldElem()
 	feSquare(x2, &c.x)
 	feSquare(y2, &c.y)
 
-	lhs := newGFp2()
+	lhs := newFieldElem()
 	feSub(lhs, y2, x2)
 	feMul(lhs, lhs, z2)
 
-	rhs := newGFp2()
+	rhs := newFieldElem()
 	feSquare(rhs, &c.t)
 	feMul(rhs, rhs, d)
 	feAdd(rhs, rhs, z4)
@@ -75,7 +75,7 @@ func pMixedAdd(a, b *point)
 func pDbl(a *point)
 
 func (c *point) MakeAffine() {
-	// zInv := newGFp2().Invert(c.z)
+	// zInv := newFieldElem().Invert(c.z)
 	feInvert(&c.z, &c.z)
 
 	feMul(&c.x, &c.x, &c.z)
