@@ -24,7 +24,7 @@ func newFieldElem() *fieldElem {
 }
 
 func (e *fieldElem) String() string {
-	return fmt.Sprintf("[%v, %v]", e.x, e.y)
+	return fmt.Sprintf("[%v, %v]", &e.x, &e.y)
 }
 
 func (e *fieldElem) Int() *big.Int {
@@ -72,6 +72,16 @@ func (e *fieldElem) IsZero() bool {
 	return e.x[0] == 0 && e.x[1] == 0 && e.y[0] == 0 && e.y[1] == 0
 }
 
+func (e *fieldElem) Neg(a *fieldElem) *fieldElem {
+	e.x[0] = ^a.x[0]
+	e.x[1] = (^a.x[1]) & aMask
+
+	e.y[0] = ^a.y[0]
+	e.y[1] = (^a.y[1]) & aMask
+
+	return e
+}
+
 //go:noescape
 func feAdd(c, a, b *fieldElem)
 
@@ -96,4 +106,11 @@ func (e *fieldElem) reduce() {
 	if e.y[0] == bMask && e.y[1] == aMask {
 		e.y[0], e.y[1] = 0, 0
 	}
+}
+
+func (e *fieldElem) sign() uint64 {
+	if e.x.IsZero() {
+		return e.y[1] >> 62
+	}
+	return e.x[1] >> 62
 }

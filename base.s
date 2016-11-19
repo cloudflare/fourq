@@ -1,5 +1,15 @@
 #include "base.h"
 
+// func bfeDbl(c, a *baseFieldElem)
+TEXT ·bfeDbl(SB),0,$0-16
+	MOVQ a+8(FP), DI
+	bfeMov(0(DI),8(DI), AX,BX)
+	bfeDbl(AX,BX)
+
+	MOVQ c+0(FP), DI
+	bfeMov(AX,BX, 0(DI),8(DI))
+	RET
+
 // func bfeAdd(c, a, b *baseFieldElem)
 TEXT ·bfeAdd(SB),0,$0-24
 	MOVQ a+8(FP), DI
@@ -27,6 +37,7 @@ TEXT ·bfeMul(SB),0,$0-24
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
 	bfeMul(CX, 0(DI),8(DI), 0(SI),8(SI), R8,R9)
+	bfeMulReduce(CX, R8,R9)
 
 	MOVQ c+0(FP), DI
 	bfeMov(R8,R9, 0(DI),8(DI))
@@ -36,6 +47,7 @@ TEXT ·bfeMul(SB),0,$0-24
 TEXT ·bfeSquare(SB),0,$0-16
 	MOVQ a+8(FP), DI
 	bfeSquare(CX, 0(DI),8(DI), R8,R9)
+	bfeMulReduce(CX, R8,R9)
 
 	MOVQ c+0(FP), DI
 	bfeMov(R8,R9, 0(DI),8(DI))

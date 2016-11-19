@@ -32,6 +32,7 @@ var (
 		x: baseFieldElem{0x142, 0xe4},
 		y: baseFieldElem{0xb3821488f1fc0c8d, 0x5e472f846657e0fc},
 	}
+	one = &fieldElem{x: baseFieldElem{0x1, 0x0}}
 
 	// generatorBase is pre-computed multiples of the curve's generator.
 	generatorBase = [...]*point{

@@ -16,6 +16,96 @@ func newPoint() *point {
 	return pt
 }
 
+func decompressPoint(y *big.Int) (*point, bool) {
+	pt := &point{}
+	pt.y.SetInt(y)
+	pt.z.SetOne()
+
+	// Separate p.y from the sign of x.
+	var s uint64
+	s, pt.y.y[1] = uint64(pt.y.y[1])>>63, pt.y.y[1]&aMask
+
+	if pt.y.x[1]>>63 == 1 {
+		return nil, false
+	}
+
+	u, v := newFieldElem(), newFieldElem()
+	feSquare(u, &pt.y)
+	feSub(u, u, one)
+
+	feSquare(v, &pt.y)
+	feMul(v, v, d)
+	feAdd(v, v, one)
+
+	t0, temp := newBaseFieldElem(), newBaseFieldElem()
+	bfeMul(t0, &u.x, &v.x)
+	bfeMul(temp, &u.y, &v.y)
+	bfeAdd(t0, t0, temp)
+
+	t1 := newBaseFieldElem()
+	bfeMul(t1, &u.y, &v.x)
+	bfeMul(temp, &u.x, &v.y)
+	bfeSub(t1, temp, t1)
+
+	t2 := newBaseFieldElem()
+	bfeSquare(t2, &v.x)
+	bfeSquare(temp, &v.y)
+	bfeAdd(t2, t2, temp)
+
+	t3 := newBaseFieldElem()
+	bfeSquare(t3, t0)
+	bfeSquare(temp, t1)
+	bfeAdd(t3, t3, temp)
+	for i := 0; i < 125; i++ {
+		bfeSquare(t3, t3)
+	}
+
+	t := newBaseFieldElem()
+	bfeAdd(t, t0, t3)
+	t.reduce()
+	if t.IsZero() {
+		bfeSub(t, t0, t3)
+	}
+	bfeDbl(t, t)
+
+	a := newBaseFieldElem()
+	bfeSquare(a, t2)
+	bfeMul(a, a, t2)
+	bfeMul(a, a, t)
+	a.chain1(a)
+	temp[0], temp[1] = a[0], a[1]
+
+	b := newBaseFieldElem()
+	bfeMul(b, a, t2) // a and t2 are correct => t is incorrect
+	bfeMul(b, b, t)
+
+	x0 := newBaseFieldElem()
+	bfeHalf(x0, b) // x0 is incorrect => b is incorrect
+
+	x1 := newBaseFieldElem()
+	bfeMul(x1, a, t2)
+	bfeMul(x1, x1, t1) // x1 is correct => a, t1, t2 are correct
+
+	bfeSquare(temp, b)
+	bfeMul(temp, temp, t2)
+	if *temp != *t {
+		x0, x1 = x1, x0
+	}
+
+	pt.x = fieldElem{x: *x0, y: *x1}
+	if pt.x.sign() != s {
+		pt.x.Neg(&pt.x)
+	}
+
+	if !pt.IsOnCurve() {
+		pt.x.y.Neg(&pt.x.y)
+	}
+	if !pt.IsOnCurve() {
+		return nil, false
+	}
+	return pt, true
+}
+
 func (c *point) String() string {
 	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tt: %v,\n\tz: %v\n)", &c.x, &c.y, &c.t, &c.z)
 }
@@ -42,26 +132,18 @@ func (c *point) Int() (x, y *big.Int) {
 }
 
 func (c *point) IsOnCurve() bool {
-	if c == nil {
-		return false
-	}
-
-	z2, z4 := newFieldElem(), newFieldElem()
-	feSquare(z2, &c.z)
-	feSquare(z4, z2)
-
 	x2, y2 := newFieldElem(), newFieldElem()
 	feSquare(x2, &c.x)
 	feSquare(y2, &c.y)
 
 	lhs := newFieldElem()
 	feSub(lhs, y2, x2)
-	feMul(lhs, lhs, z2)
 
 	rhs := newFieldElem()
-	feSquare(rhs, &c.t)
+	feMul(rhs, &c.x, &c.y)
+	feSquare(rhs, rhs)
 	feMul(rhs, rhs, d)
-	feAdd(rhs, rhs, z4)
+	feAdd(rhs, rhs, one)
 
 	feSub(lhs, lhs, rhs)
 	lhs.reduce()
