@@ -8,6 +8,21 @@ import (
 	"math/big"
 )
 
+func clearCofactor(pt *point) {
+	temp := (&point{}).Set(pt)
+
+	pDbl(pt)
+	pMixedAdd(pt, temp)
+	pDbl(pt)
+	pDbl(pt)
+	pDbl(pt)
+	pDbl(pt)
+	pMixedAdd(pt, temp)
+	pDbl(pt)
+	pDbl(pt)
+	pDbl(pt)
+}
+
 // IsOnCurve returns true if (xI, yI) is a point on the curve (including the
 // identity point and points in a non-prime order subgroup) and false otherwise.
 func IsOnCurve(xI, yI *big.Int) bool {
