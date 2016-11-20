@@ -1,5 +1,15 @@
 #include "field.h"
 
+// func feDbl(c, a *fieldElem)
+TEXT ·feDbl(SB),0,$0-16
+	MOVQ a+8(FP), DI
+	feMov(0(DI),8(DI),16(DI),24(DI), AX,BX,CX,DX)
+	feDbl(AX,BX,CX,DX)
+
+	MOVQ c+0(FP), DI
+	feMov(AX,BX,CX,DX, 0(DI),8(DI),16(DI),24(DI))
+	RET
+
 // func feAdd(c, a, b *fieldElem)
 TEXT ·feAdd(SB),0,$0-24
 	MOVQ a+8(FP), DI

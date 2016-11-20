@@ -74,6 +74,9 @@ func (e *fieldElem) sign() uint64 {
 }
 
 //go:noescape
+func feDbl(c, a *fieldElem)
+
+//go:noescape
 func feAdd(c, a, b *fieldElem)
 
 //go:noescape

@@ -1,0 +1,69 @@
+func pAdd(a, b *point) { // R2 x R3 -> R1
+	// TODO(brendan): Swap inputs. Convert R1 to R3.
+
+	//  x,  y,  z,  t
+	// N1, D1, E1, F1
+	// N2, D2, Z2, T2
+
+	A := newFieldElem()
+	feMul(A, &a.y, &b.y)
+
+	B := newFieldElem()
+	feMul(B, &a.x, &b.x)
+
+	C := newFieldElem()
+	feMul(C, &a.t, &b.t)
+
+	D := newFieldElem()
+	feMul(D, &a.z, &b.z)
+
+	E := newFieldElem()
+	feSub(E, B, A)
+
+	F := newFieldElem()
+	feSub(F, D, C)
+
+	G := newFieldElem()
+	feAdd(G, D, C)
+
+	H := newFieldElem()
+	feAdd(H, A, B)
+
+	feMul(&a.x, E, F)
+	feMul(&a.y, G, H)
+	feMul(&a.z, F, G)
+	a.t.Set(E)
+	a.tb.Set(H)
+}
+
+func pDbl(a *point) { // R4 -> R1
+	A := newFieldElem()
+	feSquare(A, &a.x)
+
+	B := newFieldElem()
+	feSquare(B, &a.y)
+
+	C := newFieldElem()
+	feSquare(C, &a.z)
+	feDbl(C)
+
+	D := newFieldElem()
+	feAdd(A, B)
+
+	E := newFieldElem()
+	feAdd(E, &a.x, &a.y)
+	feSquare(E, E)
+	feSub(E, E, D)
+
+	F := newFieldElem()
+	feSub(F, B, A)
+
+	G := newFieldElem()
+	feSub(G, C, F)
+
+	feMul(&a.x, E, G)
+	feMul(&a.y, D, F)
+	feMul(&a.z, F, G)
+	a.t.Set(E)
+	a.tb.Set(D)
+}

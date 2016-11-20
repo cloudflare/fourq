@@ -6,7 +6,7 @@ import (
 )
 
 type point struct {
-	x, y, t, z fieldElem
+	x, y, z, t fieldElem
 }
 
 func newPoint() *point {
@@ -157,6 +157,41 @@ func (c *point) MakeAffine() {
 	// c.t.reduce()
 }
 
+func pDbl(a *point) {
+	A := newFieldElem()
+	feSquare(A, &a.x)
+
+	B := newFieldElem()
+	feSquare(B, &a.y)
+
+	C := newFieldElem()
+	feSquare(C, &a.z)
+	feDbl(C, C)
+
+	// D = -A
+
+	E := newFieldElem()
+	feAdd(E, &a.x, &a.y)
+	feSquare(E, E)
+	feSub(E, E, A)
+	feSub(E, E, B)
+
+	G := newFieldElem()
+	feSub(G, B, A)
+
+	F := newFieldElem()
+	feSub(F, G, C)
+
+	H := newFieldElem()
+	feSub(H, H, A)
+	feSub(H, H, B)
+
+	feMul(&a.x, E, F)
+	feMul(&a.y, G, H)
+	feMul(&a.z, F, G)
+	feMul(&a.t, E, H)
+}
+
 func pMixedAdd(a, b *point) {
 	A := newFieldElem()
 	feMul(A, &a.x, &b.x)
@@ -168,30 +203,26 @@ func pMixedAdd(a, b *point) {
 	feMul(C, &a.t, &b.t)
 	feMul(C, C, d)
 
-	D := newFieldElem()
-	feMul(D, &a.z, &b.z)
+	// D = Z1
 
-	E, t := newFieldElem(), newFieldElem()
+	E, temp := newFieldElem(), newFieldElem()
 	feAdd(E, &a.x, &a.y)
-	feAdd(t, &b.x, &b.y)
-	feMul(E, E, t)
+	feAdd(temp, &b.x, &b.y)
+	feMul(E, E, temp)
 	feSub(E, E, A)
 	feSub(E, E, B)
 
 	F := newFieldElem()
-	feSub(F, D, C)
+	feSub(F, &a.z, C)
 
 	G := newFieldElem()
-	feAdd(G, D, C)
+	feAdd(G, &a.z, C)
 
 	H := newFieldElem()
 	feAdd(H, A, B)
 
 	feMul(&a.x, E, F)
 	feMul(&a.y, G, H)
-	feMul(&a.t, E, H)
 	feMul(&a.z, F, G)
+	feMul(&a.t, E, H)
 }
-
-//go:noescape
-func pDbl(a *point)
