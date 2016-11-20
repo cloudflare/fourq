@@ -1,6 +1,14 @@
 #include "base.h"
 
+// func bfeHalf(c, a *baseFieldElem)
+TEXT ·bfeHalf(SB),0,$0-16
+	MOVQ a+8(FP), DI
+	bfeMov(0(DI),8(DI), AX,BX)
+	bfeHalf(AX,BX)
 
+	MOVQ c+0(FP), DI
+	bfeMov(AX,BX, 0(DI),8(DI))
+	RET
 
 // func bfeDbl(c, a *baseFieldElem)
 TEXT ·bfeDbl(SB),0,$0-16

@@ -102,10 +102,8 @@ func (e *baseFieldElem) reduce() {
 //go:noescape
 func bfeDbl(c, a *baseFieldElem)
 
-func bfeHalf(c, a *baseFieldElem) {
-	elem := &baseFieldElem{0x0000000000000000, 0x4000000000000000}
-	bfeMul(c, elem, a)
-}
+//go:noescape
+func bfeHalf(c, a *baseFieldElem)
 
 //go:noescape
 func bfeAdd(c, a, b *baseFieldElem)
