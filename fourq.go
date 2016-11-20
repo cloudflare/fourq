@@ -15,8 +15,8 @@ func IsOnCurve(xI, yI *big.Int) bool {
 		return false
 	}
 
-	pt := newPoint().SetInt(xI, yI)
-	return pt.IsOnCurve()
+	_, ok := newPoint().SetInt(xI, yI)
+	return ok
 }
 
 func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
@@ -24,13 +24,15 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 		return nil, nil
 	}
 
-	pt := &point{}
-	// TODO(brendan): Check if point is on curve?
-	pt.SetInt(xI, yI) // TODO(brendan): Point decompression.
+	pt, ok := (&point{}).SetInt(xI, yI)
+	if !ok {
+		return nil, nil
+	}
+	// TODO(brendan): Mult by cofactor
 
 	sum := newPoint()
 
-	for _, byte := range k { // TODO(brendan): Mult by cofactor.
+	for _, byte := range k {
 		for bit := 0; bit < 8; bit++ {
 			pDbl(sum)
 			if byte&0x80 == 0x080 {

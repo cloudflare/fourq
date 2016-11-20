@@ -16,24 +16,37 @@ func newPoint() *point {
 	return pt
 }
 
-func decompressPoint(y *big.Int) (*point, bool) {
-	pt := &point{}
-	pt.y.SetInt(y)
-	pt.z.SetOne()
+func (c *point) String() string {
+	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tt: %v,\n\tz: %v\n)", &c.x, &c.y, &c.t, &c.z)
+}
+
+func (c *point) Set(a *point) *point {
+	c.x.Set(&a.x)
+	c.y.Set(&a.y)
+	c.t.Set(&a.t)
+	c.z.Set(&a.z)
+	return c
+}
+
+func (c *point) SetInt(x, y *big.Int) (*point, bool) {
+	c.y.x.SetInt(x)
+	c.y.y.SetInt(y)
+	c.z.SetOne()
 
 	// Separate p.y from the sign of x.
 	var s uint64
-	s, pt.y.y[1] = uint64(pt.y.y[1])>>63, pt.y.y[1]&aMask
+	s, c.y.y[1] = uint64(c.y.y[1])>>63, c.y.y[1]&aMask
 
-	if pt.y.x[1]>>63 == 1 {
+	if c.y.x[1]>>63 == 1 {
 		return nil, false
 	}
 
+	// Recover x coordinate from y, up to a multiple of plus/minus one.
 	u, v := newFieldElem(), newFieldElem()
-	feSquare(u, &pt.y)
+	feSquare(u, &c.y)
 	feSub(u, u, one)
 
-	feSquare(v, &pt.y)
+	feSquare(v, &c.y)
 	feMul(v, v, d)
 	feAdd(v, v, one)
 
@@ -78,56 +91,36 @@ func decompressPoint(y *big.Int) (*point, bool) {
 	bfeMul(b, a, t2)
 	bfeMul(b, b, t)
 
-	x0 := newBaseFieldElem()
-	bfeHalf(x0, b)
+	bfeHalf(&c.x.x, b)
+	bfeMul(&c.x.y, a, t2)
+	bfeMul(&c.x.y, &c.x.y, t1)
 
-	x1 := newBaseFieldElem()
-	bfeMul(x1, a, t2)
-	bfeMul(x1, x1, t1)
-
+	// Recover x-coordinate exactly.
 	bfeSquare(temp, b)
 	bfeMul(temp, temp, t2)
 	if *temp != *t {
-		x0, x1 = x1, x0
+		c.x.x, c.x.y = c.x.y, c.x.x
+	}
+	if c.x.sign() != s {
+		c.x.Neg(&c.x)
+	}
+	if !c.IsOnCurve() {
+		c.x.y.Neg(&c.x.y)
 	}
 
-	pt.x = fieldElem{x: *x0, y: *x1}
-	if pt.x.sign() != s {
-		pt.x.Neg(&pt.x)
-	}
-
-	if !pt.IsOnCurve() {
-		pt.x.y.Neg(&pt.x.y)
-	}
-	if !pt.IsOnCurve() {
+	// Finally, verify point is valid and return.
+	if !c.IsOnCurve() {
 		return nil, false
 	}
-	return pt, true
-}
 
-func (c *point) String() string {
-	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tt: %v,\n\tz: %v\n)", &c.x, &c.y, &c.t, &c.z)
-}
-
-func (c *point) Set(a *point) *point {
-	c.x.Set(&a.x)
-	c.y.Set(&a.y)
-	c.t.Set(&a.t)
-	c.z.Set(&a.z)
-	return c
-}
-
-func (c *point) SetInt(x, y *big.Int) *point {
-	c.x.SetInt(x)
-	c.y.SetInt(y)
 	feMul(&c.t, &c.x, &c.y)
-	c.z.SetOne()
-	return c
+	return c, true
 }
 
 func (c *point) Int() (x, y *big.Int) {
 	c.MakeAffine()
-	return c.x.Int(), c.y.Int()
+	c.y.y[1] += c.x.sign() << 63
+	return c.y.x.Int(), c.y.y.Int()
 }
 
 func (c *point) IsOnCurve() bool {
@@ -147,6 +140,21 @@ func (c *point) IsOnCurve() bool {
 	feSub(lhs, lhs, rhs)
 	lhs.reduce()
 	return lhs.IsZero()
+}
+
+func (c *point) MakeAffine() {
+	// zInv := newFieldElem().Invert(c.z)
+	c.z.Invert(&c.z)
+
+	feMul(&c.x, &c.x, &c.z)
+	feMul(&c.y, &c.y, &c.z)
+	// feMul(c.t, c.t, zInv)
+	// feMul(c.z, c.x, c.y)
+	// c.z.SetOne()
+
+	c.x.reduce()
+	c.y.reduce()
+	// c.t.reduce()
 }
 
 func pMixedAdd(a, b *point) {
@@ -187,18 +195,3 @@ func pMixedAdd(a, b *point) {
 
 //go:noescape
 func pDbl(a *point)
-
-func (c *point) MakeAffine() {
-	// zInv := newFieldElem().Invert(c.z)
-	c.z.Invert(&c.z)
-
-	feMul(&c.x, &c.x, &c.z)
-	feMul(&c.y, &c.y, &c.z)
-	// feMul(c.t, c.t, zInv)
-	// feMul(c.z, c.x, c.y)
-	// c.z.SetOne()
-
-	c.x.reduce()
-	c.y.reduce()
-	// c.t.reduce()
-}

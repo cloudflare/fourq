@@ -2,6 +2,7 @@ package fourq
 
 import (
 	"fmt"
+	"math/big"
 )
 
 // baseFieldElem is an element of the curve's base field, the integers modulo
@@ -14,9 +15,25 @@ func newBaseFieldElem() *baseFieldElem {
 
 func (e *baseFieldElem) String() string { return fmt.Sprintf("%16.16x %16.16x", e[1], e[0]) }
 
+func (e *baseFieldElem) Int() *big.Int {
+	return new(big.Int).SetBits([]big.Word{
+		big.Word(e[0]), big.Word(e[1]),
+	})
+}
+
 func (e *baseFieldElem) Set(a *baseFieldElem) { e[0], e[1] = a[0], a[1] }
 func (e *baseFieldElem) SetZero()             { e[0], e[1] = 0, 0 }
 func (e *baseFieldElem) SetOne()              { e[0], e[1] = 1, 0 }
+
+func (e *baseFieldElem) SetInt(in *big.Int) *baseFieldElem {
+	e.SetZero()
+
+	for i, w := range in.Bits() {
+		e[i] = uint64(w)
+	}
+
+	return e
+}
 
 func (e *baseFieldElem) IsZero() bool { return e[0] == 0 && e[1] == 0 }
 
