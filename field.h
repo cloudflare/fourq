@@ -35,12 +35,10 @@
 	bfeMulReduce(carry, c2,c3)
 
 #define feSquare(carry,t0,t1, a0,a1,a2,a3, c0,c1,c2,c3) \
-	MOVQ a0, c2 \
-	MOVQ a1, c3 \
+	bfeMov(a0,a1, c2,c3) \
 	bfeAdd(a2,a3, c2,c3) \
 	\
-	MOVQ a2, t0 \
-	MOVQ a3, t1 \
+	bfeMov(a2,a3, t0,t1) \
 	bfeSub(a0,a1, t0,t1) \
 	\
 	bfeMul(carry, c2,c3, t0,t1, c0,c1) \

@@ -12,6 +12,13 @@
 	NOTQ c1 \
 	BTRQ $63, c1
 
+// #define bfeHalf(c0,c1) \
+// 	SHLQ $1, c1 \
+// 	SHRQ $2, c1:c0 \
+// 	SHRQ $1, c0:c1 \
+// 	SHRQ $1, c1 \
+// 	BTRQ $63, c1
+
 #define bfeDbl(c0,c1) \
 	SHLQ $1, c1 \
 	SHLQ $1, c0 \

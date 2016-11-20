@@ -72,19 +72,18 @@ func decompressPoint(y *big.Int) (*point, bool) {
 	bfeSquare(a, t2)
 	bfeMul(a, a, t2)
 	bfeMul(a, a, t)
-	a.chain1(a)
-	temp[0], temp[1] = a[0], a[1]
+	a.chain1251(a)
 
 	b := newBaseFieldElem()
-	bfeMul(b, a, t2) // a and t2 are correct => t is incorrect
+	bfeMul(b, a, t2)
 	bfeMul(b, b, t)
 
 	x0 := newBaseFieldElem()
-	bfeHalf(x0, b) // x0 is incorrect => b is incorrect
+	bfeHalf(x0, b)
 
 	x1 := newBaseFieldElem()
 	bfeMul(x1, a, t2)
-	bfeMul(x1, x1, t1) // x1 is correct => a, t1, t2 are correct
+	bfeMul(x1, x1, t1)
 
 	bfeSquare(temp, b)
 	bfeMul(temp, temp, t2)
@@ -158,7 +157,7 @@ func pDbl(a *point)
 
 func (c *point) MakeAffine() {
 	// zInv := newFieldElem().Invert(c.z)
-	feInvert(&c.z, &c.z)
+	c.z.Invert(&c.z)
 
 	feMul(&c.x, &c.x, &c.z)
 	feMul(&c.y, &c.y, &c.z)

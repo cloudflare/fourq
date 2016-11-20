@@ -1,5 +1,7 @@
 #include "base.h"
 
+
+
 // func bfeDbl(c, a *baseFieldElem)
 TEXT ·bfeDbl(SB),0,$0-16
 	MOVQ a+8(FP), DI

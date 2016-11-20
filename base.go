@@ -12,15 +12,22 @@ func newBaseFieldElem() *baseFieldElem {
 	return &baseFieldElem{}
 }
 
-func (e *baseFieldElem) String() string {
-	return fmt.Sprintf("%16.16x %16.16x", e[1], e[0])
+func (e *baseFieldElem) String() string { return fmt.Sprintf("%16.16x %16.16x", e[1], e[0]) }
+
+func (e *baseFieldElem) Set(a *baseFieldElem) { e[0], e[1] = a[0], a[1] }
+func (e *baseFieldElem) SetZero()             { e[0], e[1] = 0, 0 }
+func (e *baseFieldElem) SetOne()              { e[0], e[1] = 1, 0 }
+
+func (e *baseFieldElem) IsZero() bool { return e[0] == 0 && e[1] == 0 }
+
+func (e *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
+	e[0] = ^a[0]
+	e[1] = (^a[1]) & aMask
+	return e
 }
 
-func (e *baseFieldElem) IsZero() bool {
-	return e[0] == 0 && e[1] == 0
-}
-
-func (e *baseFieldElem) chain1(a *baseFieldElem) *baseFieldElem {
+// chain1251 sets e to a^(2^125-1) and returns e.
+func (e *baseFieldElem) chain1251(a *baseFieldElem) *baseFieldElem {
 	t1 := newBaseFieldElem()
 	t2 := newBaseFieldElem()
 	t3 := newBaseFieldElem()
@@ -74,21 +81,18 @@ func (e *baseFieldElem) chain1(a *baseFieldElem) *baseFieldElem {
 	return e
 }
 
+// Invert sets e to a^(-1) and returns e.
 func (e *baseFieldElem) Invert(a *baseFieldElem) *baseFieldElem {
-	t1 := newBaseFieldElem().chain1(a)
-	bfeSquare(t1, t1)
-	bfeSquare(t1, t1)
-	bfeMul(e, t1, a)
+	t := newBaseFieldElem().chain1251(a)
+	bfeSquare(t, t)
+	bfeSquare(t, t)
+	bfeMul(e, t, a)
 
 	return e
 }
 
-func (e *baseFieldElem) Neg(a *baseFieldElem) *baseFieldElem {
-	e[0] = ^a[0]
-	e[1] = (^a[1]) & aMask
-	return e
-}
-
+// reduce sets e to zero if it is equal to p. This is the only case where e will
+// not naturally be reduce to canonical form.
 func (e *baseFieldElem) reduce() {
 	if e[0] == bMask && e[1] == aMask {
 		e[0], e[1] = 0, 0

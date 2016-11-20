@@ -37,8 +37,8 @@ func (e *fieldElem) Int() *big.Int {
 }
 
 func (e *fieldElem) Set(a *fieldElem) *fieldElem {
-	e.x[0], e.x[1] = a.x[0], a.x[1]
-	e.y[0], e.y[1] = a.y[0], a.y[1]
+	e.x.Set(&a.x)
+	e.y.Set(&a.y)
 	return e
 }
 
@@ -56,30 +56,53 @@ func (e *fieldElem) SetInt(in *big.Int) *fieldElem {
 	return e
 }
 
-func (e *fieldElem) SetZero() *fieldElem {
-	e.x[0], e.x[1] = 0, 0
-	e.y[0], e.y[1] = 0, 0
-	return e
+func (e *fieldElem) SetZero() {
+	e.x.SetZero()
+	e.y.SetZero()
 }
 
-func (e *fieldElem) SetOne() *fieldElem {
-	e.x[0], e.x[1] = 1, 0
-	e.y[0], e.y[1] = 0, 0
-	return e
+func (e *fieldElem) SetOne() {
+	e.x.SetOne()
+	e.y.SetZero()
 }
 
 func (e *fieldElem) IsZero() bool {
-	return e.x[0] == 0 && e.x[1] == 0 && e.y[0] == 0 && e.y[1] == 0
+	return e.x.IsZero() && e.y.IsZero()
 }
 
 func (e *fieldElem) Neg(a *fieldElem) *fieldElem {
-	e.x[0] = ^a.x[0]
-	e.x[1] = (^a.x[1]) & aMask
+	e.x.Neg(&a.x)
+	e.y.Neg(&a.y)
+	return e
+}
 
-	e.y[0] = ^a.y[0]
-	e.y[1] = (^a.y[1]) & aMask
+func (e *fieldElem) Invert(a *fieldElem) *fieldElem {
+	t1 := newBaseFieldElem()
+	t2 := newBaseFieldElem()
+
+	bfeSquare(t1, &a.x)
+	bfeSquare(t2, &a.y)
+	bfeAdd(t1, t1, t2)
+	t1.Invert(t1)
+
+	bfeMul(&e.x, &a.x, t1)
+
+	t1.Neg(t1)
+	bfeMul(&e.y, &a.y, t1)
 
 	return e
+}
+
+func (e *fieldElem) reduce() {
+	e.x.reduce()
+	e.y.reduce()
+}
+
+func (e *fieldElem) sign() uint64 {
+	if e.x.IsZero() {
+		return e.y[1] >> 62
+	}
+	return e.x[1] >> 62
 }
 
 //go:noescape
@@ -93,24 +116,3 @@ func feMul(c, a, b *fieldElem)
 
 //go:noescape
 func feSquare(c, a *fieldElem)
-
-//go:noescape
-func feInvert(c, a *fieldElem)
-
-// reduce will set e.x or e.y to zero if they're equal to p. This is the only
-// case where they will not naturally be reduced to canonical form.
-func (e *fieldElem) reduce() {
-	if e.x[0] == bMask && e.x[1] == aMask {
-		e.x[0], e.x[1] = 0, 0
-	}
-	if e.y[0] == bMask && e.y[1] == aMask {
-		e.y[0], e.y[1] = 0, 0
-	}
-}
-
-func (e *fieldElem) sign() uint64 {
-	if e.x.IsZero() {
-		return e.y[1] >> 62
-	}
-	return e.x[1] >> 62
-}

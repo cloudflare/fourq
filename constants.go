@@ -23,7 +23,10 @@ var (
 			x: baseFieldElem{0x894ba36ee8cee416, 0x35bfa1947fb0913e},
 			y: baseFieldElem{0x673c574d296cd8d0, 0x7bfb41a38e7076ac},
 		},
-		z: *newFieldElem().SetOne(),
+		z: fieldElem{
+			x: baseFieldElem{0x0000000000000001, 0x0000000000000000},
+			y: baseFieldElem{0x0000000000000000, 0x0000000000000000},
+		},
 	}
 	Gx, _ = new(big.Int).SetString("aa33387bad92652805b32f7c2372341af677ac60b39f86969caa78283f551f1e", 16)
 	Gy, _ = new(big.Int).SetString("87b2cb2b46a224b95a7820a19bee3f0e5c8b4c8444c3a74942020e63f84a1c6e", 16)
