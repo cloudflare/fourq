@@ -43,20 +43,4 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 	return sum.Int()
 }
 
-func ScalarBaseMult(k []byte) (x, y *big.Int) {
-	if len(k) == 0 {
-		return nil, nil
-	}
-
-	sum := &point{}
-	sum.Set(generatorBase[k[0]])
-
-	for _, byte := range k[1:] { // TODO(brendan): Mult by cofactor.
-		for bit := 0; bit < 8; bit++ {
-			pDbl(sum)
-		}
-		pMixedAdd(sum, generatorBase[byte])
-	}
-
-	return sum.Int()
-}
+func ScalarBaseMult(k []byte) (x, y *big.Int) { return ScalarMult(Gx, Gy, k) }

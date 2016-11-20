@@ -149,8 +149,41 @@ func (c *point) IsOnCurve() bool {
 	return lhs.IsZero()
 }
 
-//go:noescape
-func pMixedAdd(a, b *point)
+func pMixedAdd(a, b *point) {
+	A := newFieldElem()
+	feMul(A, &a.x, &b.x)
+
+	B := newFieldElem()
+	feMul(B, &a.y, &b.y)
+
+	C := newFieldElem()
+	feMul(C, &a.t, &b.t)
+	feMul(C, C, d)
+
+	D := newFieldElem()
+	feMul(D, &a.z, &b.z)
+
+	E, t := newFieldElem(), newFieldElem()
+	feAdd(E, &a.x, &a.y)
+	feAdd(t, &b.x, &b.y)
+	feMul(E, E, t)
+	feSub(E, E, A)
+	feSub(E, E, B)
+
+	F := newFieldElem()
+	feSub(F, D, C)
+
+	G := newFieldElem()
+	feAdd(G, D, C)
+
+	H := newFieldElem()
+	feAdd(H, A, B)
+
+	feMul(&a.x, E, F)
+	feMul(&a.y, G, H)
+	feMul(&a.t, E, H)
+	feMul(&a.z, F, G)
+}
 
 //go:noescape
 func pDbl(a *point)

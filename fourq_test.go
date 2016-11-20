@@ -1,7 +1,6 @@
 package fourq
 
 import (
-	"fmt"
 	"testing"
 
 	"crypto/elliptic"
@@ -10,30 +9,6 @@ import (
 
 	"golang.org/x/crypto/curve25519"
 )
-
-func TestTemp(t *testing.T) {
-	for i := 0; i < 500000; i++ {
-		k := make([]byte, 32)
-		rand.Read(k)
-		x3, y3 := ScalarBaseMult(k)
-
-		temp := newFieldElem()
-		temp.SetInt(x3)
-		sign := temp.sign()
-		temp.SetInt(y3)
-		temp.y[1] += sign << 63
-		y3 = temp.Int()
-		temp.SetInt(x3)
-
-		pt, ok := decompressPoint(y3)
-		if !ok || fmt.Sprint(temp) != fmt.Sprint(&pt.x) {
-			t.Log(ScalarMult(Gx, Gy, k))
-			t.Log(temp)
-			t.Log(&pt.x)
-			t.Fatal("asdf")
-		}
-	}
-}
 
 func TestIsOnCurve(t *testing.T) {
 	if !IsOnCurve(Gx, Gy) {
