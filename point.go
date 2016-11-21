@@ -17,7 +17,7 @@ func newPoint() *point {
 }
 
 func (c *point) String() string {
-	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tt: %v,\n\tz: %v\n)", &c.x, &c.y, &c.t, &c.z)
+	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tz: %v,\n\tt: %v\n)", &c.x, &c.y, &c.z, &c.t)
 }
 
 func (c *point) Set(a *point) *point {
@@ -157,40 +157,8 @@ func (c *point) MakeAffine() {
 	// c.t.reduce()
 }
 
-func pDbl(a *point) {
-	A := newFieldElem()
-	feSquare(A, &a.x)
-
-	B := newFieldElem()
-	feSquare(B, &a.y)
-
-	C := newFieldElem()
-	feSquare(C, &a.z)
-	feDbl(C, C)
-
-	// D = -A
-
-	E := newFieldElem()
-	feAdd(E, &a.x, &a.y)
-	feSquare(E, E)
-	feSub(E, E, A)
-	feSub(E, E, B)
-
-	G := newFieldElem()
-	feSub(G, B, A)
-
-	F := newFieldElem()
-	feSub(F, G, C)
-
-	H := newFieldElem()
-	feSub(H, H, A)
-	feSub(H, H, B)
-
-	feMul(&a.x, E, F)
-	feMul(&a.y, G, H)
-	feMul(&a.z, F, G)
-	feMul(&a.t, E, H)
-}
+//go:noescape
+func pDbl(a *point)
 
 func pMixedAdd(a, b *point) {
 	A := newFieldElem()

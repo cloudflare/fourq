@@ -6,6 +6,10 @@
 	MOVQ a2, c2 \
 	MOVQ a3, c3
 
+#define feNeg(c0,c1,c2,c3) \
+	bfeNeg(c0,c1) \
+	bfeNeg(c2,c3)
+
 #define feDbl(c0,c1,c2,c3) \
 	bfeDbl(c0,c1) \
 	bfeDbl(c2,c3)
