@@ -143,18 +143,16 @@ func (c *point) IsOnCurve() bool {
 }
 
 func (c *point) MakeAffine() {
-	// zInv := newFieldElem().Invert(c.z)
-	c.z.Invert(&c.z)
+	zInv := newFieldElem().Invert(&c.z)
 
-	feMul(&c.x, &c.x, &c.z)
-	feMul(&c.y, &c.y, &c.z)
-	// feMul(c.t, c.t, zInv)
-	// feMul(c.z, c.x, c.y)
-	// c.z.SetOne()
+	feMul(&c.x, &c.x, zInv)
+	feMul(&c.y, &c.y, zInv)
+	c.z.SetOne()
+	feMul(&c.t, &c.x, &c.y)
 
 	c.x.reduce()
 	c.y.reduce()
-	// c.t.reduce()
+	c.t.reduce()
 }
 
 //go:noescape
