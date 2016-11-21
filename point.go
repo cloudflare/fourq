@@ -20,6 +20,10 @@ func (c *point) String() string {
 	return fmt.Sprintf("point(\n\tx: %v,\n\ty: %v,\n\tz: %v,\n\tt: %v\n)", &c.x, &c.y, &c.z, &c.t)
 }
 
+func (c *point) GoString() string {
+	return fmt.Sprintf("&point{\n\tx: %#v,\n\ty: %#v,\n\tz: %#v,\n\tt: %#v,\n}", &c.x, &c.y, &c.z, &c.t)
+}
+
 func (c *point) Set(a *point) *point {
 	c.x.Set(&a.x)
 	c.y.Set(&a.y)
@@ -28,6 +32,8 @@ func (c *point) Set(a *point) *point {
 	return c
 }
 
+// SetInt decompresses the point (x, y) and stores it in c. It returns c and
+// true if decompression succeeded; false if not.
 func (c *point) SetInt(x, y *big.Int) (*point, bool) {
 	c.y.x.SetInt(x)
 	c.y.y.SetInt(y)
@@ -117,6 +123,7 @@ func (c *point) SetInt(x, y *big.Int) (*point, bool) {
 	return c, true
 }
 
+// Int returns c, compressed into two big.Ints.
 func (c *point) Int() (x, y *big.Int) {
 	c.MakeAffine()
 	c.y.y[1] += c.x.sign() << 63

@@ -18,6 +18,10 @@ func (e *fieldElem) String() string {
 	return fmt.Sprintf("[%v, %v]", &e.x, &e.y)
 }
 
+func (e *fieldElem) GoString() string {
+	return fmt.Sprintf("fieldElem{x: %#v, y: %#v}", &e.x, &e.y)
+}
+
 func (e *fieldElem) Set(a *fieldElem) *fieldElem {
 	e.x.Set(&a.x)
 	e.y.Set(&a.y)
@@ -66,6 +70,7 @@ func (e *fieldElem) reduce() {
 	e.y.reduce()
 }
 
+// sign returns the "sign" of e -- either 0 or 1, used to distinguish e from -e.
 func (e *fieldElem) sign() uint64 {
 	if e.x.IsZero() {
 		return e.y[1] >> 62

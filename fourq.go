@@ -34,6 +34,7 @@ func IsOnCurve(xI, yI *big.Int) bool {
 	return ok
 }
 
+// ScalarMult returns the point (xI, yI) multiplied by scalar k.
 func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 	if xI == nil || yI == nil {
 		return nil, nil
@@ -61,4 +62,28 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 	return sum.Int()
 }
 
-func ScalarBaseMult(k []byte) (x, y *big.Int) { return ScalarMult(Gx, Gy, k) }
+// ScalarBaseMult returns the generator multiplied by scalar k. k's slice should
+// be 32 bytes long or shorter.
+func ScalarBaseMult(k []byte) (x, y *big.Int) {
+	if len(k) > 32 {
+		return nil, nil
+	}
+	K := make([]byte, 32)
+	copy(k, K[32-len(k):])
+
+	sum := newPoint()
+
+	for i := 0; i < 16; i++ {
+		for bit := uint(0); bit < 8; bit++ {
+			idx := (K[31-i] >> (7 - bit)) & 1
+			idx = 2*idx + (K[15-i]>>(7-bit))&1
+
+			pDbl(sum)
+			if idx != 0 {
+				pMixedAdd(sum, generatorBase[idx])
+			}
+		}
+	}
+
+	return sum.Int()
+}

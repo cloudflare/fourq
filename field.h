@@ -22,6 +22,7 @@
 	bfeSub(a0,a1, c0,c1) \
 	bfeSub(a2,a3, c2,c3)
 
+// feReverseSub negates c0:..:c3 and stores a0:..:a3 - c0:..:c3 in a0:..:a3.
 #define feReverseSub(a0,a1,a2,a3, c0,c1,c2,c3) \
 	bfeReverseSub(a0,a1, c0,c1) \
 	bfeReverseSub(a2,a3, c2,c3)
@@ -38,6 +39,8 @@
 	bfeMulAdd(CX, a2,a3, b0,b1, c2,c3) \
 	bfeMulReduce(carry, c2,c3)
 
+// feSquare squares a0:..:a3 and stores the result in c0:..:c3, using
+// carry,t0,t1 as workspace.
 #define feSquare(carry,t0,t1, a0,a1,a2,a3, c0,c1,c2,c3) \
 	bfeMov(a0,a1, c2,c3) \
 	bfeAdd(a2,a3, c2,c3) \

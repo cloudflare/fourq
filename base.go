@@ -15,6 +15,10 @@ func newBaseFieldElem() *baseFieldElem {
 
 func (e *baseFieldElem) String() string { return fmt.Sprintf("%16.16x %16.16x", e[1], e[0]) }
 
+func (e *baseFieldElem) GoString() string {
+	return fmt.Sprintf("baseFieldElem{0x%16.16x, 0x%16.16x}", e[0], e[1])
+}
+
 func (e *baseFieldElem) Int() *big.Int {
 	return new(big.Int).SetBits([]big.Word{
 		big.Word(e[0]), big.Word(e[1]),
