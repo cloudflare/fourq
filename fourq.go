@@ -43,6 +43,7 @@ func ScalarMult(xI, yI *big.Int, k []byte) (*big.Int, *big.Int) {
 	if !ok {
 		return nil, nil
 	}
+	feMul(&pt.t, &pt.t, d)
 	// TODO(brendan): Mult by cofactor
 
 	sum := newPoint()

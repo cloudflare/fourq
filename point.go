@@ -160,37 +160,5 @@ func (c *point) MakeAffine() {
 //go:noescape
 func pDbl(a *point)
 
-func pMixedAdd(a, b *point) {
-	A := newFieldElem()
-	feMul(A, &a.x, &b.x)
-
-	B := newFieldElem()
-	feMul(B, &a.y, &b.y)
-
-	C := newFieldElem()
-	feMul(C, &a.t, &b.t)
-	feMul(C, C, d)
-
-	// D = Z1
-
-	E, temp := newFieldElem(), newFieldElem()
-	feAdd(E, &a.x, &a.y)
-	feAdd(temp, &b.x, &b.y)
-	feMul(E, E, temp)
-	feSub(E, E, A)
-	feSub(E, E, B)
-
-	F := newFieldElem()
-	feSub(F, &a.z, C)
-
-	G := newFieldElem()
-	feAdd(G, &a.z, C)
-
-	H := newFieldElem()
-	feAdd(H, A, B)
-
-	feMul(&a.x, E, F)
-	feMul(&a.y, G, H)
-	feMul(&a.z, F, G)
-	feMul(&a.t, E, H)
-}
+//go:noescape
+func pMixedAdd(a, b *point)
