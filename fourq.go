@@ -4,8 +4,9 @@
 // https://eprint.iacr.org/2015/565.pdf
 package fourq
 
-func clearCofactor(pt *point) {
+func multByCofactor(pt *point) {
 	temp := (&point{}).Set(pt)
+	feMul(&temp.t, &temp.t, d)
 
 	pDbl(pt)
 	pMixedAdd(pt, temp)
@@ -19,21 +20,25 @@ func clearCofactor(pt *point) {
 	pDbl(pt)
 }
 
-// IsOnCurve returns true if pt is a point on the curve (including the identity
-// point and points in a non-prime order subgroup) and false otherwise.
+// IsOnCurve returns true if the given is a point on the curve (including the
+// identity point and points in a non-prime order subgroup) and false otherwise.
 func IsOnCurve(in [32]byte) bool {
 	_, ok := newPoint().SetBytes(in)
 	return ok
 }
 
 // ScalarMult returns the point multiplied by scalar k.
-func ScalarMult(in [32]byte, k []byte) [32]byte {
+func ScalarMult(in [32]byte, k []byte, clearCofactor bool) ([32]byte, bool) {
 	pt, ok := (&point{}).SetBytes(in)
 	if !ok {
-		return [32]byte{}
+		return [32]byte{}, false
+	}
+
+	if clearCofactor {
+		multByCofactor(pt)
+		pt.MakeAffine()
 	}
 	feMul(&pt.t, &pt.t, d)
-	// TODO(brendan): Mult by cofactor
 
 	sum := newPoint()
 
@@ -47,7 +52,8 @@ func ScalarMult(in [32]byte, k []byte) [32]byte {
 		}
 	}
 
-	return sum.Bytes()
+	out := sum.Bytes()
+	return out, out != [32]byte{1}
 }
 
 // ScalarBaseMult returns the generator multiplied by scalar k. k's slice should

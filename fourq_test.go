@@ -16,15 +16,19 @@ func TestIsOnCurve(t *testing.T) {
 		t.Fatal("Generator is not on curve.")
 	}
 
-	pt2 := ScalarMult(G, Order.Bytes())
-	if !IsOnCurve(pt2) {
+	pt2, ok := ScalarMult(G, Order.Bytes(), false)
+	if ok {
+		t.Fatal("Returned ok on identity point.")
+	} else if !IsOnCurve(pt2) {
 		t.Fatal("Identity point is not on curve.")
 	}
 
 	k := make([]byte, 32)
 	rand.Read(k)
-	pt3 := ScalarMult(G, k)
-	if !IsOnCurve(pt3) {
+	pt3, ok := ScalarMult(G, k, false)
+	if !ok {
+		t.Fatal("not ok")
+	} else if !IsOnCurve(pt3) {
 		t.Fatal("Random multiple of generator is not on curve.")
 	}
 
@@ -43,7 +47,12 @@ func TestScalarBaseMultOrder(t *testing.T) {
 
 	k := make([]byte, 32)
 	rand.Read(k)
-	pt4, pt5 := ScalarMult(G, k), ScalarBaseMult(k)
+
+	pt4, ok := ScalarMult(G, k, false)
+	if !ok {
+		t.Fatal("not ok")
+	}
+	pt5 := ScalarBaseMult(k)
 	if pt4 != pt5 {
 		t.Fatal("ScalarMult(G, k) != ScalarBaseMult(k)")
 	}
@@ -54,6 +63,7 @@ func TestScalarMult(t *testing.T) {
 	scalar := [4]uint64{0x3AD457AB55456230, 0x3A8B3C2C6FD86E0C, 0x7E38F7C9CFBB9166, 0x0028FD6CBDA458F0}
 
 	pt := G
+	var ok bool
 	for i := 0; i < 1000; i++ {
 		scalar[1] = scalar[2]
 		scalar[2] += scalar[0]
@@ -67,12 +77,37 @@ func TestScalarMult(t *testing.T) {
 		k.Lsh(k, 64)
 		k.Add(k, new(big.Int).SetUint64(scalar[0]))
 
-		pt = ScalarMult(pt, k.Bytes())
+		pt, ok = ScalarMult(pt, k.Bytes(), false)
+		if !ok {
+			t.Fatal("not ok")
+		}
 	}
 
 	real := "44336f9967501c286c930e7c81b3010945125f9129c4e84f10e2acac8e940b57"
 	if fmt.Sprintf("%x", pt) != real {
 		t.Fatal("Point is wrong!")
+	}
+}
+
+func TestCofactorClearing(t *testing.T) {
+	limit := big.NewInt(1)
+	limit.Lsh(limit, 200)
+
+	K1, _ := rand.Int(rand.Reader, limit)
+	K2 := big.NewInt(392)
+	K2.Mul(K1, K2)
+
+	pt1, ok := ScalarMult(G, K1.Bytes(), true)
+	if !ok {
+		t.Fatal("not ok")
+	}
+	pt2, ok := ScalarMult(G, K2.Bytes(), false)
+	if !ok {
+		t.Fatal("not ok")
+	}
+
+	if pt1 != pt2 {
+		t.Fatal("Points are not the same.")
 	}
 }
 
@@ -94,7 +129,7 @@ func BenchmarkScalarMult(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ScalarMult(G, k)
+		ScalarMult(G, k, false)
 	}
 }
 

@@ -50,13 +50,14 @@ func init() {
 	for idx := 1; idx < 256; idx++ {
 		s := make([]byte, 32)
 		for bit := uint(0); bit < 8; bit++ {
-			if (idx >> bit)&1 == 1 {
+			if (idx>>bit)&1 == 1 {
 				s[31-4*bit] = 1
 			}
 		}
 
-		pt, _ := (&point{}).SetBytes(ScalarMult(G, s))
-		feMul(&pt.t, &pt.t, d)
-		generatorBase[idx] = pt
+		pt1, _ := ScalarMult(G, s, false)
+		pt2, _ := (&point{}).SetBytes(pt1)
+		feMul(&pt2.t, &pt2.t, d)
+		generatorBase[idx] = pt2
 	}
 }
