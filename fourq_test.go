@@ -5,38 +5,40 @@ import (
 
 	"crypto/elliptic"
 	"crypto/rand"
+	"fmt"
 	"math/big"
 
 	"golang.org/x/crypto/curve25519"
 )
 
 func TestIsOnCurve(t *testing.T) {
-	if !IsOnCurve(Gx, Gy) {
+	if !IsOnCurve(G) {
 		t.Fatal("Generator is not on curve.")
 	}
 
-	x2, y2 := ScalarMult(Gx, Gy, Order.Bytes())
-	if !IsOnCurve(x2, y2) {
+	pt2 := ScalarMult(G, Order.Bytes())
+	if !IsOnCurve(pt2) {
 		t.Fatal("Identity point is not on curve.")
 	}
 
 	k := make([]byte, 32)
 	rand.Read(k)
-	x3, y3 := ScalarMult(Gx, Gy, k)
-	if !IsOnCurve(x3, y3) {
+	pt3 := ScalarMult(G, k)
+	if !IsOnCurve(pt3) {
 		t.Fatal("Random multiple of generator is not on curve.")
 	}
 
-	x4, y4 := big.NewInt(5), big.NewInt(7)
-	if IsOnCurve(x4, y4) {
+	pt4 := [32]byte{}
+	pt4[0], pt4[16] = 5, 7
+	if IsOnCurve(pt4) {
 		t.Fatal("Non-existent point is on curve.")
 	}
 }
 
 func TestScalarBaseMultOrder(t *testing.T) {
-	x3, y3 := ScalarBaseMult(Order.Bytes())
+	pt3 := ScalarBaseMult(Order.Bytes())
 
-	if x3.String() != "1" || y3.String() != "0" {
+	if pt3 != [32]byte{1} {
 		t.Fatal("ScalarMult(Generator, Order) was not identity.")
 	}
 }
@@ -45,7 +47,7 @@ func TestScalarMult(t *testing.T) {
 	// Source: https://github.com/bifurcation/fourq/blob/master/impl/curve4q.py#L549
 	scalar := [4]uint64{0x3AD457AB55456230, 0x3A8B3C2C6FD86E0C, 0x7E38F7C9CFBB9166, 0x0028FD6CBDA458F0}
 
-	x, y := Gx, Gy
+	pt := G
 	for i := 0; i < 1000; i++ {
 		scalar[1] = scalar[2]
 		scalar[2] += scalar[0]
@@ -59,13 +61,11 @@ func TestScalarMult(t *testing.T) {
 		k.Lsh(k, 64)
 		k.Add(k, new(big.Int).SetUint64(scalar[0]))
 
-		x, y = ScalarMult(x, y, k.Bytes())
+		pt = ScalarMult(pt, k.Bytes())
 	}
 
-	realX := "901b3817c0e936c281c5067996f3344"
-	realY := "570b948eacace2104fe8c429915f1245"
-
-	if x.Text(16) != realX || y.Text(16) != realY {
+	real := "44336f9967501c286c930e7c81b3010945125f9129c4e84f10e2acac8e940b57"
+	if fmt.Sprintf("%x", pt) != real {
 		t.Fatal("Point is wrong!")
 	}
 }
@@ -88,7 +88,7 @@ func BenchmarkScalarMult(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ScalarMult(Gx, Gy, k)
+		ScalarMult(G, k)
 	}
 }
 

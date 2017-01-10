@@ -2,7 +2,6 @@ package fourq
 
 import (
 	"fmt"
-	"math/big"
 )
 
 type point struct {
@@ -11,8 +10,8 @@ type point struct {
 
 func newPoint() *point {
 	pt := &point{}
-	pt.y.SetOne()
-	pt.z.SetOne()
+	pt.y.x[0] = 1
+	pt.z.x[0] = 1
 	return pt
 }
 
@@ -32,11 +31,11 @@ func (c *point) Set(a *point) *point {
 	return c
 }
 
-// SetInt decompresses the point (x, y) and stores it in c. It returns c and
+// SetBytes decompresses the point pt and stores it in c. It returns c and
 // true if decompression succeeded; false if not.
-func (c *point) SetInt(x, y *big.Int) (*point, bool) {
-	c.y.x.SetInt(x)
-	c.y.y.SetInt(y)
+func (c *point) SetBytes(pt [32]byte) (*point, bool) {
+	c.y.x.SetBytes(pt[:16])
+	c.y.y.SetBytes(pt[16:])
 	c.z.SetOne()
 
 	// Separate p.y from the sign of x.
@@ -124,10 +123,14 @@ func (c *point) SetInt(x, y *big.Int) (*point, bool) {
 }
 
 // Int returns c, compressed into two big.Ints.
-func (c *point) Int() (x, y *big.Int) {
+func (c *point) Bytes() (out [32]byte) {
 	c.MakeAffine()
 	c.y.y[1] += c.x.sign() << 63
-	return c.y.x.Int(), c.y.y.Int()
+
+	x, y := c.y.x.Bytes(), c.y.y.Bytes()
+	copy(out[:16], x[:])
+	copy(out[16:], y[:])
+	return
 }
 
 func (c *point) IsOnCurve() bool {

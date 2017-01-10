@@ -2,7 +2,6 @@ package fourq
 
 import (
 	"fmt"
-	"math/big"
 )
 
 // baseFieldElem is an element of the curve's base field, the integers modulo
@@ -19,24 +18,26 @@ func (e *baseFieldElem) GoString() string {
 	return fmt.Sprintf("baseFieldElem{0x%16.16x, 0x%16.16x}", e[0], e[1])
 }
 
-func (e *baseFieldElem) Int() *big.Int {
-	return new(big.Int).SetBits([]big.Word{
-		big.Word(e[0]), big.Word(e[1]),
-	})
+func (e *baseFieldElem) Bytes() [16]byte {
+	return [16]byte{
+		byte(e[0]), byte(e[0] >> 8), byte(e[0] >> 16), byte(e[0] >> 24),
+		byte(e[0] >> 32), byte(e[0] >> 40), byte(e[0] >> 48), byte(e[0] >> 56),
+		byte(e[1]), byte(e[1] >> 8), byte(e[1] >> 16), byte(e[1] >> 24),
+		byte(e[1] >> 32), byte(e[1] >> 40), byte(e[1] >> 48), byte(e[1] >> 56),
+	}
 }
 
 func (e *baseFieldElem) Set(a *baseFieldElem) { e[0], e[1] = a[0], a[1] }
 func (e *baseFieldElem) SetZero()             { e[0], e[1] = 0, 0 }
 func (e *baseFieldElem) SetOne()              { e[0], e[1] = 1, 0 }
 
-func (e *baseFieldElem) SetInt(in *big.Int) *baseFieldElem {
-	e.SetZero()
-
-	for i, w := range in.Bits() {
-		e[i] = uint64(w)
-	}
-
-	return e
+func (e *baseFieldElem) SetBytes(in []byte) {
+	e[0] = uint64(in[0]) | uint64(in[1])<<8 | uint64(in[2])<<16 |
+		uint64(in[3])<<24 | uint64(in[4])<<32 | uint64(in[5])<<40 |
+		uint64(in[6])<<48 | uint64(in[7])<<56
+	e[1] = uint64(in[8]) | uint64(in[9])<<8 | uint64(in[10])<<16 |
+		uint64(in[11])<<24 | uint64(in[12])<<32 | uint64(in[13])<<40 |
+		uint64(in[14])<<48 | uint64(in[15])<<56
 }
 
 func (e *baseFieldElem) IsZero() bool { return e[0] == 0 && e[1] == 0 }
