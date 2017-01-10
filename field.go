@@ -28,11 +28,6 @@ func (e *fieldElem) Set(a *fieldElem) *fieldElem {
 	return e
 }
 
-func (e *fieldElem) SetZero() {
-	e.x.SetZero()
-	e.y.SetZero()
-}
-
 func (e *fieldElem) SetOne() {
 	e.x.SetOne()
 	e.y.SetZero()

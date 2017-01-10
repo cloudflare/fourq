@@ -22,29 +22,20 @@
 	bfeSub(a0,a1, c0,c1) \
 	bfeSub(a2,a3, c2,c3)
 
-// feReverseSub negates c0:..:c3 and stores a0:..:a3 - c0:..:c3 in a0:..:a3.
-#define feReverseSub(a0,a1,a2,a3, c0,c1,c2,c3) \
-	bfeReverseSub(a0,a1, c0,c1) \
-	bfeReverseSub(a2,a3, c2,c3)
-
 #define feMul(ra, rb, rc) \
-	\ // T0 = a0 * b0, (r11, r10, r9, r8) <- [reg_p1_0-8] * [reg_p2_0-8]
+	\ // T0 = a0 * b0, R11:R10:R9:R8 <- 0+ra:8+ra * 0+rb:8+rb
 	MOVQ 0+rb, DX \
 	MULXQ 0+ra, R8, R9 \
 	MULXQ 8+ra, R10, AX \
-	\ // pushq r15
-	\ // pushq r14
 	ADDQ R10, R9 \
 	MOVQ 8+rb, DX \
 	MULXQ 8+ra, R10, R11 \
-	\ // pushq r13
 	ADCQ AX, R10 \
-	\ // pushq r12
 	MULXQ 0+ra, DX, AX \
 	ADCQ $0, R11 \
 	ADDQ DX, R9 \
 	\
-	\ // T1 = a1 * b1, (r15, r14, r13, r12) <- [reg_p1_16-24] * [reg_p2_16-24]
+	\ // T1 = a1 * b1, R15:R14:R13:R12 <- 16+ra:24+ra * 16+rb:24+rb
 	MOVQ 16+rb, DX \
 	MULXQ 16+ra, R12, R13 \
 	ADCQ AX, R10 \
@@ -61,7 +52,6 @@
 	ADCQ $0, R15 \
 	\
 	\ // c0 = T0 - T1 = a0*b0 - a1*b1
-	XORQ AX, AX \
 	SUBQ R12, R8 \
 	SBBQ R13, R9 \
 	SBBQ R14, R10 \
@@ -72,9 +62,9 @@
 	MOVQ 16+rb, DX \
 	BTRQ $63, R9 \
 	\
-	\ // T0 = a0 * b1, (r15, r14, r13, r12) <- [reg_p1_0-8] * [reg_p2_16-24]
+	\ // T0 = a0 * b1, R15:R14:R13:R12 <- 0+ra:8+ra * 16+rb:24+rb
 	MULXQ 0+ra, R12, R13 \
-	BTRQ $63, R11 \ // Add prime if borrow=1
+	BTRQ $63, R11 \
 	SBBQ $0, R10 \
 	SBBQ $0, R11 \
 	MULXQ 8+ra, R14, AX \
@@ -95,7 +85,7 @@
 	ADCQ $0, R10 \
 	ADCQ $0, R11 \
 	\
-	\ // T1 = a1 * b0, (r12, r11, r10, r9) <- [reg_p1_16-24] * [reg_p2_0-8]
+	\ // T1 = a1 * b0, R12:R11:R10:R9 <- 16+ra:24+ra * 0+rb:8+rb
 	MOVQ 0+rb, DX \
 	MULXQ 16+ra, R8, R9 \
 	MOVQ R10, 0+rc \
@@ -113,11 +103,8 @@
 	\
 	\ // c1 = T0 + T1 = a0*b1 + a1*b0
 	ADDQ R12, R8 \
-	\ // popq r12
 	ADCQ R13, R9 \
-	\ // popq r13
 	ADCQ R14, R10 \
-	\ // popq r14
 	ADCQ R15, R11 \
 	\
 	\ // Reducing and storing c1
@@ -128,35 +115,31 @@
 	ADCQ R10, R8 \
 	ADCQ R11, R9 \
 	BTRQ $63, R9 \
-	\ // popq r15
 	ADCQ $0, R8 \
 	ADCQ $0, R9 \
 	MOVQ R8, 16+rc \
 	MOVQ R9, 24+rc
 
 #define feSquare(ra, rc) \
-	\ // t0 = (r9, r8) = a0 + a1, (rcx, r14) <- a1
+	\ // t0 = R9:R8 = a0 + a1, R14:CX = a1
 	MOVQ 0+ra, R10 \
-	\ // pushq r14
 	MOVQ 16+ra, R14 \
 	SUBQ R14, R10 \
 	MOVQ 8+ra, R11 \
 	MOVQ 24+ra, CX \
 	SBBQ CX, R11 \
 	\
-	\ // pushq r13
 	BTRQ $63, R11 \
-	\ // pushq r12
 	SBBQ $0, R10 \
 	\
-	\ // t1 = (r11, r10) = a0 - a1
+	\ // t1 = R11:R10 = a0 - a1
 	MOVQ R10, DX \
 	MOVQ 0+ra, R8 \
 	ADDQ R14, R8 \
 	MOVQ 8+ra, R9 \
 	ADCQ CX, R9 \
 	\
-	\ //  c0 = t0 * t1 = (a0 + a1)*(a0 - a1), (rcx, r14, r13, r12) <- (r9, r8) * (r11, r10)
+	\ //  c0 = t0 * t1 = (a0 + a1)*(a0 - a1), CX:R14:R13:R12 <- R9:R8 * R11:R10
 	MULXQ R8, R12, R13 \
 	SBBQ $0, R11 \
 	MULXQ R9, R14, AX \
@@ -172,7 +155,7 @@
 	ADCQ AX, R14 \
 	ADCQ $0, CX \
 	\
-	\ // t2 = (r9, r8) = 2*a0
+	\ // t2 = R9:R8 = 2*a0
 	ADDQ R8, R8 \
 	ADCQ R9, R9 \
 	\
@@ -189,12 +172,10 @@
 	MOVQ R12, 0+rc \
 	MOVQ R13, 8+rc \
 	\
-	\ //  c1 = 2a0 * a1, (rcx, r14, r11, r10) <- (r9, r8) * [reg_p1_16-24]
+	\ //  c1 = 2a0 * a1, CX:R14:R11:R10 <- R9:R8 * 16+ra:24+ra
 	MOVQ 16+ra, DX \
 	MULXQ R8, R10, R11 \
-	\ // popq r12
 	MULXQ R9, R14, AX \
-	\ // popq r13
 	ADDQ R14, R11 \
 	MOVQ 24+ra, DX \
 	MULXQ R9, R14, CX \
@@ -205,7 +186,7 @@
 	ADCQ AX, R14 \
 	ADCQ $0, CX \
 	\
-	\ // Reduce and store c1.
+	\ // Reduce and store c1
 	SHLQ $1, R14, CX \
 	SHLQ $1, R11, R14 \
 	BTRQ $63, R11 \
@@ -213,7 +194,6 @@
 	ADCQ R14, R10 \
 	ADCQ CX, R11 \
 	BTRQ $63, R11 \
-	\ // popq r14
 	ADCQ $0, R10 \
 	ADCQ $0, R11 \
 	MOVQ R10, 16+rc \
