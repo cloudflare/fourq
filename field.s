@@ -34,19 +34,17 @@ TEXT ·feSub(SB),0,$0-24
 
 // func feMul(c, a, b *fieldElem)
 TEXT ·feMul(SB),0,$0-24
+	MOVQ c+0(FP), BX
 	MOVQ a+8(FP), DI
 	MOVQ b+16(FP), SI
-	feMul(CX, 0(DI),8(DI),16(DI),24(DI), 0(SI),8(SI),16(SI),24(SI), R8,R9,R10,R11)
 
-	MOVQ c+0(FP), DI
-	feMov(R8,R9,R10,R11, 0(DI),8(DI),16(DI),24(DI))
+	feMul(0(DI), 0(SI), 0(BX))
 	RET
 
 // func feSquare(c, a *fieldElem)
 TEXT ·feSquare(SB),0,$0-16
+	MOVQ c+0(FP), BX
 	MOVQ a+8(FP), DI
-	feSquare(CX,R12,R13, 0(DI),8(DI),16(DI),24(DI), R8,R9,R10,R11)
 
-	MOVQ c+0(FP), DI
-	feMov(R8,R9,R10,R11, 0(DI),8(DI),16(DI),24(DI))
+	feSquare(0(DI), 0(BX))
 	RET
