@@ -37,9 +37,15 @@ func TestIsOnCurve(t *testing.T) {
 
 func TestScalarBaseMultOrder(t *testing.T) {
 	pt3 := ScalarBaseMult(Order.Bytes())
-
 	if pt3 != [32]byte{1} {
 		t.Fatal("ScalarMult(Generator, Order) was not identity.")
+	}
+
+	k := make([]byte, 32)
+	rand.Read(k)
+	pt4, pt5 := ScalarMult(G, k), ScalarBaseMult(k)
+	if pt4 != pt5 {
+		t.Fatal("ScalarMult(G, k) != ScalarBaseMult(k)")
 	}
 }
 

@@ -57,14 +57,14 @@ func ScalarBaseMult(k []byte) [32]byte {
 		return [32]byte{}
 	}
 	K := make([]byte, 32)
-	copy(k, K[32-len(k):])
+	copy(K[32-len(k):], k)
 
 	sum := newPoint()
 
 	for i := 0; i < 16; i++ {
 		for bit := uint(0); bit < 8; bit++ {
-			idx := (K[31-i] >> (7 - bit)) & 1
-			idx = 2*idx + (K[15-i]>>(7-bit))&1
+			idx := (K[i] >> (7 - bit)) & 1
+			idx = 2*idx + ((K[16+i] >> (7 - bit)) & 1)
 
 			pDbl(sum)
 			if idx != 0 {
