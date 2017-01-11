@@ -122,7 +122,24 @@ func (c *point) SetBytes(pt [32]byte) (*point, bool) {
 	return c, true
 }
 
-// Int returns c, compressed into two big.Ints.
+// SetBytesU returns c and true if pt represents an uncompressed point on the
+// curve; false if not.
+func (c *point) SetBytesU(pt [64]byte) (*point, bool) {
+	c.x.x.SetBytes(pt[:16])
+	c.x.y.SetBytes(pt[16:32])
+	c.y.x.SetBytes(pt[32:48])
+	c.y.y.SetBytes(pt[48:])
+
+	if !c.IsOnCurve() {
+		return nil, false
+	}
+
+	c.z.SetOne()
+	feMul(&c.t, &c.x, &c.y)
+	return c, true
+}
+
+// Bytes returns c, compressed into a [32]byte.
 func (c *point) Bytes() (out [32]byte) {
 	c.MakeAffine()
 	c.y.y[1] += c.x.sign() << 63
@@ -130,6 +147,19 @@ func (c *point) Bytes() (out [32]byte) {
 	x, y := c.y.x.Bytes(), c.y.y.Bytes()
 	copy(out[:16], x[:])
 	copy(out[16:], y[:])
+	return
+}
+
+// BytesU returns c, as an uncompressed [64]byte.
+func (c *point) BytesU() (out [64]byte) {
+	c.MakeAffine()
+
+	xx, xy := c.x.x.Bytes(), c.x.y.Bytes()
+	yx, yy := c.y.x.Bytes(), c.y.y.Bytes()
+	copy(out[0:16], xx[:])
+	copy(out[16:32], xy[:])
+	copy(out[32:48], yx[:])
+	copy(out[48:], yy[:])
 	return
 }
 
